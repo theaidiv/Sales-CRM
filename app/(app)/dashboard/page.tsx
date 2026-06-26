@@ -49,13 +49,16 @@ export default async function DashboardPage() {
   const pipelineData = ["New", "Contacted", "Meeting Scheduled", "Quotation Shared", "Negotiation", "On Hold"]
     .map((s) => ({ stage: s, value: Math.round(stageMap.get(s)?.value ?? 0), count: stageMap.get(s)?.count ?? 0 }));
 
-  // Team performance (managers only)
-  const execProfiles = profiles.filter((p) => p.role === "Sales Executive");
+  // Seller performance (managers only) — includes the Sales Head, who is a producer.
+  const sellerProfiles = profiles.filter((p) => p.role === "Sales Head" || p.role === "Sales Executive");
   const teamData = manager
-    ? execProfiles.map((e) => {
-        const t = targets.find((x) => x.scope === "user" && x.period_type === "monthly" && x.owner_id === e.id);
-        return { name: e.name.split(" ")[0], achieved: t?.achieved_amount ?? 0, target: t?.target_amount ?? 0 };
-      })
+    ? sellerProfiles
+        .map((e) => {
+          const t = targets.find((x) => x.scope === "user" && x.period_type === "monthly" && x.owner_id === e.id);
+          return { name: e.name.split(" ")[0], achieved: t?.achieved_amount ?? 0, target: t?.target_amount ?? 0 };
+        })
+        .filter((d) => d.target > 0)
+        .sort((a, b) => b.target - a.target)
     : [];
 
   const detachedPotential = customers

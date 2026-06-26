@@ -1,14 +1,14 @@
 /**
- * Seed script — demo users + 500 customers with a 27-month order history
- * (Apr 2024 → current month) across the last two completed Indian financial
- * years plus the current FY-to-date, with correlated opportunities, activities,
- * quotations, comments and historical/current targets.
+ * Seed script — tuned to the customer's real figures.
  *
- * Re-runnable: it clears existing demo data first (no schema reset needed).
+ *  Scale: small business, ~₹40L/month (~₹4.8Cr/year).
+ *  Parties: 76 (51 Regular, 12 Detached, 13 New).
+ *  Team:   Sales Head (Sandeep) is the lead seller (₹29L/mo) + 3 executives (₹11L/mo split).
+ *  Geo:    ~50% local (India), ~50% export.
+ *  Targets: monthly with backlog rollover across all 3 FYs (Jun'25 ₹30L, Jun'26 ₹40L).
+ *  May'26 leads: Regular 51 (30 won), Detached 22 (0 won), New 3 (0 won).
  *
- *   npm run seed
- *
- * Requires in .env.local: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+ * Re-runnable (clears existing data). Run after schema.sql:  npm run seed
  */
 import "dotenv/config";
 import { config } from "dotenv";
@@ -31,33 +31,34 @@ if (!url || !serviceKey) {
 const db = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
 const PASSWORD = "Demo@1234";
-const CR = 10000000;
+const L = 100000;      // 1 lakh
+const CR = 10000000;   // 1 crore
+
 const INDUSTRIES = [
   "Automotive Components", "Steel & Metal Fabrication", "Industrial Machinery",
   "Textile Manufacturing", "Chemical Processing", "Plastics & Polymers",
   "Electrical Equipment", "Pumps & Valves", "Packaging Materials", "Agro Equipment",
   "Pharmaceutical Machinery", "Food Processing Equipment", "Construction Materials", "Heavy Engineering",
 ];
-const COUNTRIES = [
-  "India", "UAE", "Saudi Arabia", "USA", "Germany", "United Kingdom", "Nigeria",
+const EXPORT_COUNTRIES = [
+  "UAE", "Saudi Arabia", "USA", "Germany", "United Kingdom", "Nigeria",
   "Kenya", "Bangladesh", "Vietnam", "Brazil", "South Africa", "Australia", "Indonesia", "Egypt",
 ];
-const STAGES = ["New", "Contacted", "Meeting Scheduled", "Quotation Shared", "Negotiation", "Won", "Lost", "On Hold"] as const;
 const ACTIVITY_TYPES = ["Call", "Meeting", "Visit", "Follow-Up", "Quotation", "Order", "Email"] as const;
 
+// Sales Head is a producer (lead seller). 3 executives under her.
 const USERS = [
   { name: "Admin User", email: "admin@salesos.demo", role: "Admin", team: "Management" },
-  { name: "Sandeep Mehra", email: "head@salesos.demo", role: "Sales Head", team: "Management" },
-  { name: "Priya Sharma", email: "priya@salesos.demo", role: "Sales Executive", team: "Export-MEA" },
-  { name: "Rahul Verma", email: "rahul@salesos.demo", role: "Sales Executive", team: "Export-APAC" },
-  { name: "Anita Desai", email: "anita@salesos.demo", role: "Sales Executive", team: "Export-Americas" },
-  { name: "Vikram Singh", email: "vikram@salesos.demo", role: "Sales Executive", team: "Domestic" },
+  { name: "Sandeep Mehra", email: "head@salesos.demo", role: "Sales Head", team: "Sales" },
+  { name: "Priya Sharma", email: "priya@salesos.demo", role: "Sales Executive", team: "Sales" },
+  { name: "Rahul Verma", email: "rahul@salesos.demo", role: "Sales Executive", team: "Sales" },
+  { name: "Anita Desai", email: "anita@salesos.demo", role: "Sales Executive", team: "Sales" },
 ] as const;
 
 // Seasonality by calendar month (0=Jan). Stronger at FY-end (Mar) and quarter-ends.
 const SEASON = [0.95, 0.9, 1.2, 0.85, 0.9, 1.0, 1.0, 0.95, 1.15, 1.05, 1.1, 1.15];
-// YoY growth multiplier keyed by FY start year (relative to FY2024-25).
-const FY_GROWTH: Record<number, number> = { 2024: 1.0, 2025: 1.35, 2026: 1.7 };
+// YoY growth keyed by FY start year so Jun'25 ≈ ₹30L and Jun'26 ≈ ₹40L company-wide.
+const FY_GROWTH: Record<number, number> = { 2024: 1.0, 2025: 1.25, 2026: 1.67 };
 
 const rnd = () => faker.number.float();
 const pick = <T>(arr: readonly T[]): T => arr[Math.floor(rnd() * arr.length)];
@@ -67,8 +68,6 @@ const dayInMonth = (year: number, month0: number): string => {
 };
 
 interface MonthCell { year: number; month0: number; fyStart: number; }
-
-/** Enumerate months from Apr 2024 up to and including the current month. */
 function buildMonths(): MonthCell[] {
   const out: MonthCell[] = [];
   const now = new Date();
@@ -92,7 +91,6 @@ async function getOrCreateUser(email: string): Promise<string> {
 
 async function clearAll() {
   const ZERO = "00000000-0000-0000-0000-000000000000";
-  // comments have no FK to customers, so clear explicitly; customers cascade the rest.
   await db.from("comments").delete().neq("id", ZERO);
   await db.from("targets").delete().neq("id", ZERO);
   await db.from("customers").delete().neq("id", ZERO); // cascades orders/opps/activities/quotations
@@ -105,46 +103,51 @@ async function insertBatched(table: string, rows: any[], size = 500) {
   }
 }
 
+// Category plan: 51 Regular, 12 Detached, 13 New = 76 parties.
+const CATEGORY_PLAN: ("Regular" | "Detached" | "New")[] = [
+  ...Array(51).fill("Regular"),
+  ...Array(12).fill("Detached"),
+  ...Array(13).fill("New"),
+];
+
 async function main() {
   const months = buildMonths();
   const now = new Date();
-  console.log(`→ Order window: ${months[0].year}-${String(months[0].month0 + 1).padStart(2, "0")} … ${currentMonthKey(now)} (${months.length} months)`);
+  console.log(`→ Window ${months[0].year}-${String(months[0].month0 + 1).padStart(2, "0")} … ${currentMonthKey(now)} (${months.length} months) · scale ₹/lakhs`);
 
   console.log("→ Clearing existing demo data...");
   await clearAll();
 
-  console.log("→ Creating demo users...");
+  console.log("→ Creating demo users (Head + 3 execs)...");
   const userIds: Record<string, string> = {};
   for (const u of USERS) userIds[u.email] = await getOrCreateUser(u.email);
   await db.from("profiles").upsert(
     USERS.map((u) => ({ id: userIds[u.email], name: u.name, email: u.email, role: u.role, team: u.team }))
   );
-  const execs = USERS.filter((u) => u.role === "Sales Executive").map((u) => userIds[u.email]);
+  const headId = userIds["head@salesos.demo"];
+  const execIds = [userIds["priya@salesos.demo"], userIds["rahul@salesos.demo"], userIds["anita@salesos.demo"]];
 
-  console.log("→ Generating 500 customers with 27-month order history...");
+  console.log("→ Generating 76 parties with monthly order history...");
   type CustSeed = {
     company_name: string; contact_person: string; phone: string; email: string;
     country: string; industry: string; assigned_to: string; category: string;
     last_contact_date: string; last_order_date: string | null; total_revenue: number;
     status: string; health_score: number; health_band: string; notes: string;
-    _orders: { amount: number; order_date: string }[];
+    _orders: { amount: number; order_date: string }[]; _baseMonthly: number; _local: boolean;
   };
   const customers: CustSeed[] = [];
 
-  for (let i = 0; i < 500; i++) {
-    const roll = rnd();
-    const category = roll < 0.52 ? "Regular" : roll < 0.78 ? "Detached" : "New";
-    const assigned_to = execs[i % execs.length];
-
-    // Size tier base monthly revenue (industrial/export scale → ~₹250Cr/yr company).
+  CATEGORY_PLAN.forEach((category, i) => {
+    // Size tiers (lakhs). Company total run-rate ≈ ₹40L/month at current FY.
     const tierRoll = rnd();
-    const baseMonthly = tierRoll < 0.25 ? 800000 + rnd() * 1200000
-      : tierRoll < 0.70 ? 300000 + rnd() * 500000
-      : 100000 + rnd() * 200000;
+    const baseMonthly = tierRoll < 0.20 ? 70000 + rnd() * 50000   // ₹0.7–1.2L
+      : tierRoll < 0.65 ? 30000 + rnd() * 30000                    // ₹0.3–0.6L
+      : 10000 + rnd() * 20000;                                     // ₹0.1–0.3L
     const custGrowth = 0.9 + rnd() * 0.25;
+    const local = i % 2 === 0;                                     // ~50/50 local/export
+    const country = local ? "India" : pick(EXPORT_COUNTRIES);
 
     const orders: { amount: number; order_date: string }[] = [];
-
     if (category === "New") {
       const n = rnd() < 0.55 ? 1 + Math.floor(rnd() * 2) : 0;
       for (let k = 0; k < n; k++) {
@@ -152,9 +155,7 @@ async function main() {
         orders.push({ amount: Math.round(baseMonthly * 0.5 * (0.7 + rnd() * 0.6)), order_date: dayInMonth(m.year, m.month0) });
       }
     } else {
-      // Detached: went silent 7-11 months ago (recent lapse, just past the 6-month
-      // rule) so last FY still captured most of their orders. Regular: active to date.
-      const silenceAgo = category === "Detached" ? 7 + Math.floor(rnd() * 5) : 0;
+      const silenceAgo = category === "Detached" ? 7 + Math.floor(rnd() * 5) : 0; // 7–11 months
       const lastActiveIdx = months.length - 1 - silenceAgo;
       const orderProb = category === "Detached" ? 0.7 : 0.82;
       for (let mi = 0; mi <= lastActiveIdx; mi++) {
@@ -162,10 +163,9 @@ async function main() {
         const forceCurrent = category === "Regular" && mi === months.length - 1;
         if (!forceCurrent && rnd() > orderProb) continue;
         let amt = baseMonthly * (FY_GROWTH[m.fyStart] ?? 1) * SEASON[m.month0] * custGrowth * (0.85 + rnd() * 0.3);
-        // Detached accounts decline in their final months before going silent.
         if (category === "Detached") {
-          const distToSilence = lastActiveIdx - mi;
-          if (distToSilence < 4) amt *= [0.5, 0.65, 0.8, 0.92][distToSilence];
+          const dist = lastActiveIdx - mi;
+          if (dist < 4) amt *= [0.5, 0.65, 0.8, 0.92][dist];
         }
         orders.push({ amount: Math.round(amt), order_date: dayInMonth(m.year, m.month0) });
       }
@@ -174,38 +174,43 @@ async function main() {
 
     const total_revenue = orders.reduce((s, o) => s + o.amount, 0);
     const lastOrderDate = orders[0]?.order_date ?? null;
-
     const nowMs = now.getTime();
     const sixM = 1000 * 60 * 60 * 24 * 182;
     const recent = orders.filter((o) => nowMs - new Date(o.order_date).getTime() <= sixM).reduce((s, o) => s + o.amount, 0);
     const prior = orders.filter((o) => { const a = nowMs - new Date(o.order_date).getTime(); return a > sixM && a <= sixM * 2; }).reduce((s, o) => s + o.amount, 0);
     const revenueTrend = prior > 0 ? Math.max(-1, Math.min(1, (recent - prior) / prior)) : recent > 0 ? 0.5 : -0.4;
     const orderCount12m = orders.filter((o) => nowMs - new Date(o.order_date).getTime() <= sixM * 2).length;
-
     const last_contact_date = dayInMonth(now.getFullYear(), now.getMonth() - (category === "Detached" ? Math.floor(rnd() * 4) : 0));
     const { score, band } = healthScore({ last_order_date: lastOrderDate, last_contact_date, orderCount12m, revenueTrend });
 
     customers.push({
-      company_name: `${faker.company.name()} ${pick(["Industries", "Exports", "Manufacturing", "Engineering", "Pvt Ltd", "Group"])}`,
+      company_name: `${faker.company.name()} ${pick(["Industries", "Exports", "Manufacturing", "Engineering", "Pvt Ltd"])}`,
       contact_person: faker.person.fullName(),
       phone: faker.phone.number({ style: "international" }),
       email: faker.internet.email().toLowerCase(),
-      country: pick(COUNTRIES), industry: pick(INDUSTRIES),
-      assigned_to, category, last_contact_date, last_order_date: lastOrderDate,
-      total_revenue, status: "Active", health_score: score, health_band: band,
-      notes: faker.company.catchPhrase(), _orders: orders,
+      country, industry: pick(INDUSTRIES), assigned_to: "", category,
+      last_contact_date, last_order_date: lastOrderDate, total_revenue,
+      status: "Active", health_score: score, health_band: band,
+      notes: faker.company.catchPhrase(), _orders: orders, _baseMonthly: baseMonthly, _local: local,
     });
-  }
+  });
 
-  // Insert customers, get ids back.
-  const insertRows = customers.map(({ _orders, ...c }) => c);
+  // Assignment: Head owns the larger accounts (~72% of value); 3 execs share the rest.
+  const order = [...customers].sort((a, b) => b._baseMonthly - a._baseMonthly);
+  const headCount = 45; // of 76 — the bigger accounts
+  order.forEach((c, rank) => {
+    c.assigned_to = rank < headCount ? headId : execIds[(rank - headCount) % execIds.length];
+  });
+
+  // Insert customers
+  const insertRows = customers.map(({ _orders, _baseMonthly, _local, ...c }) => c);
   const insertedIds: string[] = [];
   for (let i = 0; i < insertRows.length; i += 200) {
     const { data, error } = await db.from("customers").insert(insertRows.slice(i, i + 200)).select("id");
     if (error) throw new Error(`insert customers: ${error.message}`);
     insertedIds.push(...data!.map((r) => r.id));
   }
-  console.log(`  inserted ${insertedIds.length} customers`);
+  console.log(`  inserted ${insertedIds.length} customers (${customers.filter(c => c.category === "Regular").length} reg, ${customers.filter(c => c.category === "Detached").length} det, ${customers.filter(c => c.category === "New").length} new)`);
 
   // Orders
   const orderRows: any[] = [];
@@ -213,32 +218,43 @@ async function main() {
   await insertBatched("orders", orderRows);
   console.log(`  inserted ${orderRows.length} orders`);
 
-  // Opportunities (built in-memory so we can calibrate targets before inserting)
+  // May 2026 leads: Regular 51 (30 won), Detached 22 (0 won), New 3 (0 won).
+  const regularIdx = customers.map((c, i) => c.category === "Regular" ? i : -1).filter((i) => i >= 0);
+  const detachedIdx = customers.map((c, i) => c.category === "Detached" ? i : -1).filter((i) => i >= 0);
+  const newIdx = customers.map((c, i) => c.category === "New" ? i : -1).filter((i) => i >= 0);
+  const mayDate = () => new Date(2026, 4, 3 + Math.floor(rnd() * 25)).toISOString().slice(0, 10);
+  const junClose = () => new Date(2026, 5, 5 + Math.floor(rnd() * 24)).toISOString().slice(0, 10);
+  const PROB: Record<string, number> = { New: 10, Contacted: 20, "Meeting Scheduled": 35, "Quotation Shared": 55, Negotiation: 75, Won: 100, Lost: 0, "On Hold": 15 };
   const oppRows: any[] = [];
-  customers.forEach((c, idx) => {
-    const count = c.category !== "Detached"
-      ? (rnd() < 0.6 ? 1 : 0) + (rnd() < 0.3 ? 1 : 0)
-      : (rnd() < 0.25 ? 1 : 0);
-    for (let k = 0; k < count; k++) {
-      const stage = c.category === "Detached" ? pick(["New", "Contacted", "On Hold"] as const) : pick(STAGES);
-      const prob = { New: 10, Contacted: 20, "Meeting Scheduled": 35, "Quotation Shared": 55, Negotiation: 75, Won: 100, Lost: 0, "On Hold": 15 }[stage];
-      oppRows.push({
-        customer_id: insertedIds[idx],
-        title: `${pick(["Supply of", "Order for", "Contract:", "Repeat order —", "RFQ for"])} ${pick(["valves", "pumps", "machinery", "steel parts", "components", "equipment", "packaging line", "spares"])}`,
-        assigned_to: c.assigned_to, stage, value: Math.round(150000 + rnd() * 1050000), probability: prob,
-        expected_close_date: dayInMonth(now.getFullYear(), now.getMonth() + Math.floor(rnd() * 4)),
-        notes: faker.lorem.sentence(),
-      });
-    }
+  const addOpp = (custIdx: number, stage: string) => {
+    const c = customers[custIdx];
+    oppRows.push({
+      customer_id: insertedIds[custIdx],
+      title: `${pick(["Supply of", "Order for", "Repeat order —", "RFQ for"])} ${pick(["valves", "pumps", "machinery", "steel parts", "components", "spares"])}`,
+      assigned_to: c.assigned_to, stage, value: Math.round(40000 + rnd() * 110000), probability: PROB[stage],
+      expected_close_date: junClose(), notes: faker.lorem.sentence(), created_at: mayDate() + "T10:00:00Z",
+    });
+  };
+  // Regular: 51 leads — 30 Won, 15 open, 6 Lost
+  regularIdx.forEach((ci, k) => {
+    const stage = k < 30 ? "Won" : k < 45 ? pick(["Contacted", "Meeting Scheduled", "Quotation Shared", "Negotiation"] as const) : "Lost";
+    addOpp(ci, stage);
   });
+  // Detached: 22 leads (spread over 12 detached) — 0 Won, mostly open, some Lost
+  for (let k = 0; k < 22; k++) {
+    const ci = detachedIdx[k % detachedIdx.length];
+    addOpp(ci, k < 17 ? pick(["New", "Contacted", "On Hold"] as const) : "Lost");
+  }
+  // New: 3 leads — 0 Won, open
+  for (let k = 0; k < 3; k++) addOpp(newIdx[k % newIdx.length], pick(["New", "Contacted"] as const));
   await insertBatched("opportunities", oppRows);
-  console.log(`  inserted ${oppRows.length} opportunities`);
+  console.log(`  inserted ${oppRows.length} opportunities (May'26 leads: 51 reg/30 won, 22 det/0 won, 3 new/0 won)`);
 
   // Quotations
   const quoteRows: any[] = [];
   customers.forEach((c, idx) => {
     if (rnd() < 0.4) quoteRows.push({
-      customer_id: insertedIds[idx], amount: Math.round(100000 + rnd() * 900000),
+      customer_id: insertedIds[idx], amount: Math.round(30000 + rnd() * 170000),
       status: pick(["Draft", "Sent", "Sent", "Accepted", "Rejected"] as const),
       quote_date: dayInMonth(now.getFullYear(), now.getMonth() - Math.floor(rnd() * 3)),
     });
@@ -266,10 +282,10 @@ async function main() {
   // Comments
   const commentRows: any[] = [];
   customers.forEach((c, idx) => {
-    if (rnd() < 0.3) {
+    if (rnd() < 0.35) {
       const k = 1 + Math.floor(rnd() * 3);
       for (let j = 0; j < k; j++) commentRows.push({
-        entity_type: "customer", entity_id: insertedIds[idx], user_id: pick(execs),
+        entity_type: "customer", entity_id: insertedIds[idx], user_id: pick([headId, ...execIds]),
         body: pick([
           "Called customer, awaiting confirmation on quantities.",
           "Quotation shared, follow up next week.",
@@ -284,72 +300,109 @@ async function main() {
   await insertBatched("comments", commentRows);
   console.log(`  inserted ${commentRows.length} comments`);
 
-  // ---- Targets: calibrate current FY to the projection, historical from actuals ----
-  console.log("→ Generating targets (calibrated + historical)...");
+  // ---- Targets: monthly with backlog rollover; achieved = ACTUAL orders ----
+  console.log("→ Generating targets (backlog rollover, achieved from actual orders)...");
+  const n = months.length;
+  const mk = (y: number, m0: number) => `${y}-${String(m0 + 1).padStart(2, "0")}`;
 
-  // Trailing 3-month average monthly revenue per customer id.
-  const recentByCustomer: Record<string, number> = {};
-  const cutoff = new Date(now.getFullYear(), now.getMonth() - 2, 1).getTime();
-  customers.forEach((c, idx) => {
-    const recent = c._orders.filter((o) => new Date(o.order_date).getTime() >= cutoff).reduce((s, o) => s + o.amount, 0);
-    recentByCustomer[insertedIds[idx]] = recent / 3;
-  });
-  const customersForCalc = customers.map((c, idx) => ({ ...c, id: insertedIds[idx] })) as any;
-  const calProj = projectMonth({ customers: customersForCalc, opportunities: oppRows, quotations: quoteRows, monthlyTarget: 0, recentRevenueByCustomer: recentByCustomer });
-
-  // Round company monthly target so projection ≈ 94% of it.
-  const roundTo = (v: number, step: number) => Math.max(step, Math.round(v / step) * step);
-  const monthlyCompany = roundTo(calProj.projectedRevenue / 0.94, 5 * CR);
-  const quarterlyCompany = roundTo(monthlyCompany * 2.9, 5 * CR);
-  const annualCompany = roundTo(monthlyCompany * 11.2, 10 * CR);
-
-  // Actuals by FY (company + per exec) from generated orders.
-  const fyCompany: Record<number, number> = {};
-  const fyExec: Record<number, Record<string, number>> = {};
+  // Actual company revenue per month from generated orders.
+  const monthActual: Record<string, number> = {};
   customers.forEach((c) => c._orders.forEach((o) => {
-    const fy = fiscalStartYear(new Date(o.order_date));
-    fyCompany[fy] = (fyCompany[fy] || 0) + o.amount;
-    fyExec[fy] = fyExec[fy] || {};
-    fyExec[fy][c.assigned_to] = (fyExec[fy][c.assigned_to] || 0) + o.amount;
+    const k = o.order_date.slice(0, 7);
+    monthActual[k] = (monthActual[k] || 0) + o.amount;
+  }));
+
+  // Base target tracks actual revenue with a slight over/under each month, so some
+  // months over-achieve (clearing backlog) and some under (carrying it) — backlog
+  // stays small and realistic instead of snowballing.
+  let backlog = 0;
+  const monthly: { m: MonthCell; target: number; achieved: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const m = months[i];
+    const actual = Math.round(monthActual[mk(m.year, m.month0)] || 0);
+    const base = Math.round(actual * (0.98 + rnd() * 0.08)); // ~0.98–1.06× of actual
+    let target = base + backlog;
+    if (m.year === 2025 && m.month0 === 5) target = 30 * L; // Jun'25 anchor (incl. backlog)
+    if (m.year === 2026 && m.month0 === 5) target = 40 * L; // Jun'26 anchor (incl. backlog)
+    backlog = Math.min(Math.max(0, target - actual), Math.round(actual * 0.4)); // bounded carry
+    monthly.push({ m, target, achieved: actual });
+  }
+
+  // Per-seller actual revenue (June, current quarter, current FY) from orders.
+  const sellerJun: Record<string, number> = {};
+  const sellerQ: Record<string, number> = {};
+  const sellerFY: Record<string, number> = {};
+  customers.forEach((c) => c._orders.forEach((o) => {
+    const d = new Date(o.order_date);
+    if (o.order_date >= "2026-06-01") sellerJun[c.assigned_to] = (sellerJun[c.assigned_to] || 0) + o.amount;
+    if (o.order_date >= "2026-04-01") sellerQ[c.assigned_to] = (sellerQ[c.assigned_to] || 0) + o.amount;
+    if (fiscalStartYear(d) === fiscalStartYear(now)) sellerFY[c.assigned_to] = (sellerFY[c.assigned_to] || 0) + o.amount;
   }));
 
   const monthKey = currentMonthKey(now);
   const quarterKey = fiscalQuarterKey(now);
-  const curFY = fiscalStartYear(now); // 2026
+  const curFY = fiscalStartYear(now);
   const targetRows: any[] = [];
 
-  // Current FY — calibrated, story-driven (mid-period, slightly behind).
-  targetRows.push({ scope: "company", period_type: "monthly", period: monthKey, owner_id: null, target_amount: monthlyCompany, achieved_amount: Math.round(monthlyCompany * 0.61) });
-  targetRows.push({ scope: "company", period_type: "quarterly", period: quarterKey, owner_id: null, target_amount: quarterlyCompany, achieved_amount: Math.round(quarterlyCompany * 0.84) });
-  targetRows.push({ scope: "company", period_type: "annual", period: fiscalYearKeyFromStart(curFY), owner_id: null, target_amount: annualCompany, achieved_amount: Math.round(quarterlyCompany * 0.84) });
-
-  const execList = USERS.filter((x) => x.role === "Sales Executive");
-  const ratios = [0.78, 0.63, 0.55, 0.70];
-  const monthlyExec = roundTo(monthlyCompany / 4, CR);
-  execList.forEach((u, i) => {
-    const id = userIds[u.email];
-    const ma = Math.round(monthlyExec * ratios[i % ratios.length]);
-    targetRows.push({ scope: "user", period_type: "monthly", period: monthKey, owner_id: id, team: u.team, target_amount: monthlyExec, achieved_amount: ma });
-    targetRows.push({ scope: "user", period_type: "quarterly", period: quarterKey, owner_id: id, team: u.team, target_amount: roundTo(monthlyExec * 2.9, CR), achieved_amount: Math.round(ma * 2.45) });
-    targetRows.push({ scope: "user", period_type: "annual", period: fiscalYearKeyFromStart(curFY), owner_id: id, team: u.team, target_amount: roundTo(monthlyExec * 11.2, CR), achieved_amount: Math.round(ma * 2.45) });
-  });
-
-  // Historical completed FYs — achieved from actuals, target back-derived from ~97-103% attainment.
-  for (const fy of [curFY - 2, curFY - 1]) {
-    const compActual = Math.round(fyCompany[fy] || 0);
-    const attain = 0.97 + rnd() * 0.08;
-    targetRows.push({ scope: "company", period_type: "annual", period: fiscalYearKeyFromStart(fy), owner_id: null, target_amount: roundTo(compActual / attain, 10 * CR), achieved_amount: compActual });
-    execList.forEach((u) => {
-      const id = userIds[u.email];
-      const ea = Math.round((fyExec[fy]?.[id]) || 0);
-      targetRows.push({ scope: "user", period_type: "annual", period: fiscalYearKeyFromStart(fy), owner_id: id, team: u.team, target_amount: roundTo(ea / (0.97 + rnd() * 0.08), CR), achieved_amount: ea });
+  // Company monthly (all months) — powers backlog story + monthly trend.
+  for (const r of monthly) {
+    targetRows.push({
+      scope: "company", period_type: "monthly",
+      period: `${r.m.year}-${String(r.m.month0 + 1).padStart(2, "0")}`,
+      owner_id: null, target_amount: r.target, achieved_amount: r.achieved,
     });
+  }
+  // Company quarterly + annual derived from monthly sums.
+  const byFY: Record<number, { t: number; a: number }> = {};
+  const byQ: Record<string, { t: number; a: number }> = {};
+  for (const r of monthly) {
+    byFY[r.m.fyStart] = byFY[r.m.fyStart] || { t: 0, a: 0 };
+    byFY[r.m.fyStart].t += r.target; byFY[r.m.fyStart].a += r.achieved;
+    const q = `${fiscalYearKeyFromStart(r.m.fyStart)}-Q${Math.floor(((r.m.month0 - 3 + 12) % 12) / 3) + 1}`;
+    byQ[q] = byQ[q] || { t: 0, a: 0 };
+    byQ[q].t += r.target; byQ[q].a += r.achieved;
+  }
+  for (const [fy, v] of Object.entries(byFY)) {
+    const isCur = Number(fy) === curFY;
+    targetRows.push({
+      scope: "company", period_type: "annual", period: fiscalYearKeyFromStart(Number(fy)),
+      owner_id: null, target_amount: isCur ? 40 * L * 12 : v.t, achieved_amount: v.a,
+    });
+  }
+  for (const [q, v] of Object.entries(byQ)) {
+    targetRows.push({ scope: "company", period_type: "quarterly", period: q, owner_id: null, target_amount: v.t, achieved_amount: v.a });
+  }
+
+  // Per-seller — targets fixed (Head ₹29L, execs ₹4L/₹4L/₹3L = ₹11L); achieved = actual orders.
+  const sellers = [
+    { id: headId, mTarget: 29 * L },
+    { id: execIds[0], mTarget: 4 * L },
+    { id: execIds[1], mTarget: 4 * L },
+    { id: execIds[2], mTarget: 3 * L },
+  ];
+  for (const s of sellers) {
+    targetRows.push({ scope: "user", period_type: "monthly", period: monthKey, owner_id: s.id, team: "Sales", target_amount: s.mTarget, achieved_amount: Math.round(sellerJun[s.id] || 0) });
+    targetRows.push({ scope: "user", period_type: "quarterly", period: quarterKey, owner_id: s.id, team: "Sales", target_amount: s.mTarget * 3, achieved_amount: Math.round(sellerQ[s.id] || 0) });
+    targetRows.push({ scope: "user", period_type: "annual", period: fiscalYearKeyFromStart(curFY), owner_id: s.id, team: "Sales", target_amount: s.mTarget * 12, achieved_amount: Math.round(sellerFY[s.id] || 0) });
   }
 
   await insertBatched("targets", targetRows);
   console.log(`  inserted ${targetRows.length} targets`);
-  console.log(`  calibration: projection ${(calProj.projectedRevenue / CR).toFixed(1)}Cr → monthly target ${(monthlyCompany / CR)}Cr`);
-  console.log(`  FY actuals: ${[curFY - 2, curFY - 1, curFY].map((fy) => `${fiscalYearKeyFromStart(fy)} ${((fyCompany[fy] || 0) / CR).toFixed(0)}Cr`).join(" · ")}`);
+
+  // Calibration check
+  const recentByCustomer: Record<string, number> = {};
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - 2, 1).getTime();
+  customers.forEach((c, idx) => {
+    const r = c._orders.filter((o) => new Date(o.order_date).getTime() >= cutoff).reduce((s, o) => s + o.amount, 0);
+    recentByCustomer[insertedIds[idx]] = r / 3;
+  });
+  const customersForCalc = customers.map((c, idx) => ({ ...c, id: insertedIds[idx] })) as any;
+  const calProj = projectMonth({ customers: customersForCalc, opportunities: oppRows, quotations: quoteRows, monthlyTarget: 40 * L, recentRevenueByCustomer: recentByCustomer });
+  const localJun = customers.filter((c) => c._local).reduce((s, c) => s + c._orders.filter((o) => o.order_date >= "2026-06-01").reduce((x, o) => x + o.amount, 0), 0);
+  const exportJun = customers.filter((c) => !c._local).reduce((s, c) => s + c._orders.filter((o) => o.order_date >= "2026-06-01").reduce((x, o) => x + o.amount, 0), 0);
+  console.log(`  projection June: ₹${(calProj.projectedRevenue / L).toFixed(1)}L vs target ₹40L`);
+  console.log(`  June actual so far — local ₹${(localJun / L).toFixed(1)}L · export ₹${(exportJun / L).toFixed(1)}L`);
+  console.log(`  FY actuals: ${[curFY - 2, curFY - 1, curFY].map((fy) => `${fiscalYearKeyFromStart(fy)} ₹${(Object.values(byFY).length ? (monthly.filter(r => r.m.fyStart === fy).reduce((s, r) => s + r.achieved, 0) / L).toFixed(0) : 0)}L-tgt`).join(" · ")}`);
 
   console.log("\n✓ Seed complete.");
   USERS.forEach((u) => console.log(`    ${u.email}  /  ${PASSWORD}   (${u.role})`));
