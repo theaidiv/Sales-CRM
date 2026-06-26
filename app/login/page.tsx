@@ -21,15 +21,27 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(error.message);
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      setError("Supabase is not configured for this deployment (missing NEXT_PUBLIC_SUPABASE_URL / ANON_KEY). Set them in Vercel and redeploy without cache.");
       setLoading(false);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(`Sign-in failed: ${(err as Error).message}`);
+      setLoading(false);
+    }
   }
 
   return (
