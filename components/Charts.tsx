@@ -78,6 +78,44 @@ export function ForecastArea({ data }: { data: { name: string; worst: number; ex
   );
 }
 
+export function RevenueTrend({ data }: { data: { month: string; revenue: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <ComposedChart data={data} margin={{ left: 10, right: 10, top: 10 }}>
+        <defs>
+          <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3563eb" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#3563eb" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
+        <XAxis dataKey="month" tick={{ fontSize: 10 }} interval={2} />
+        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} width={55} />
+        <Tooltip formatter={(v: number) => tip(v)} />
+        <Area type="monotone" dataKey="revenue" stroke="#3563eb" strokeWidth={2} fill="url(#revFill)" name="Revenue" />
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function YoYBar({ data }: { data: { fy: string; revenue: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data} margin={{ left: 10, right: 10, top: 10 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
+        <XAxis dataKey="fy" tick={{ fontSize: 11 }} />
+        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} width={55} />
+        <Tooltip formatter={(v: number) => tip(v)} />
+        <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={i === data.length - 1 ? "#3563eb" : "#93b4ff"} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 export function TeamBar({ data }: { data: { name: string; achieved: number; target: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={280}>

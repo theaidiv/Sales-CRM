@@ -25,6 +25,8 @@ export interface ProjectionInput {
   opportunities: Opportunity[];
   quotations: Quotation[];
   monthlyTarget: number;
+  /** Trailing ~3-month average monthly revenue per customer id (from real order history). */
+  recentRevenueByCustomer?: Record<string, number>;
 }
 
 /**
@@ -32,24 +34,29 @@ export interface ProjectionInput {
  * weighted open opportunities, pending quotations, and new-customer estimate.
  */
 export function projectMonth(input: ProjectionInput): ProjectionResult {
-  const { customers, opportunities, quotations, monthlyTarget } = input;
+  const { customers, opportunities, quotations, monthlyTarget, recentRevenueByCustomer } = input;
 
-  // Regular customers: monthly run-rate from historical revenue.
+  // Regular customers: monthly run-rate from real trailing order history when
+  // available, otherwise a smoothed estimate from lifetime revenue.
   let regular = 0;
   let newCustomers = 0;
   let detached = 0;
   for (const c of customers) {
     if (c.category === "Regular") {
-      const months = Math.max(monthsAgo(c.last_order_date), 1);
-      const runRate = c.total_revenue / Math.min(months + 12, 24); // smoothed monthly
+      const trailing = recentRevenueByCustomer?.[c.id];
+      const runRate =
+        trailing !== undefined && trailing > 0
+          ? trailing
+          : c.total_revenue / Math.min(Math.max(monthsAgo(c.last_order_date), 1) + 12, 24);
       regular += runRate * (0.6 + (c.health_score / 100) * 0.4);
     } else if (c.category === "New") {
       // New customers: small expected conversion contribution.
       newCustomers += 40000 * (c.health_score / 100);
     } else if (c.category === "Detached") {
       const r = recoveryScore(c);
-      // Only this month's slice of recovery potential.
-      detached += (r.potentialRevenue / 3) * r.probability;
+      // Conservative: you only re-activate a small, probability-weighted slice of
+      // detached customers in any given month — not the full quarterly potential.
+      detached += (r.potentialRevenue / 12) * r.probability;
     }
   }
 

@@ -1,7 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { isManager } from "@/lib/auth";
+import {
+  buildAnalytics, recentRevenueMap, monthlyRevenueSeries, revenueByFiscalYear,
+  type DashboardData, type MonthPoint, type YoYPoint,
+} from "@/lib/analytics";
 import type {
-  Profile, Customer, Opportunity, Activity, Quotation, Target, Comment,
+  Profile, Customer, Opportunity, Activity, Quotation, Target, Comment, OrderRow,
 } from "@/lib/types";
 
 /**
@@ -42,6 +46,26 @@ export async function getQuotations(profile: Profile): Promise<Quotation[]> {
   return (data as Quotation[]) ?? [];
 }
 
+export async function getOrders(profile: Profile, customers?: Customer[]): Promise<OrderRow[]> {
+  const supabase = createClient();
+  const manager = isManager(profile.role);
+  const ids = manager ? [] : (customers ?? (await getCustomers(profile))).map((c) => c.id);
+  if (!manager && ids.length === 0) return [];
+
+  // Paginate explicitly — Supabase caps each request at 1000 rows.
+  const rows: OrderRow[] = [];
+  const page = 1000;
+  for (let from = 0; ; from += page) {
+    let q = supabase.from("orders").select("*").order("order_date", { ascending: false }).range(from, from + page - 1);
+    if (!manager) q = q.in("customer_id", ids);
+    const { data } = await q;
+    if (!data || data.length === 0) break;
+    rows.push(...(data as OrderRow[]));
+    if (data.length < page) break;
+  }
+  return rows;
+}
+
 export async function getTargets(): Promise<Target[]> {
   const supabase = createClient();
   const { data } = await supabase.from("targets").select("*");
@@ -52,6 +76,37 @@ export async function getProfiles(): Promise<Profile[]> {
   const supabase = createClient();
   const { data } = await supabase.from("profiles").select("*");
   return (data as Profile[]) ?? [];
+}
+
+export interface AnalyticsBundle extends DashboardData {
+  orders: OrderRow[];
+  monthlySeries: MonthPoint[];
+  yoy: YoYPoint[];
+  quotations: Quotation[];
+  allTargets: Target[];
+  recent: Record<string, number>;
+}
+
+/** One-shot fetch + compute for the analytics-heavy pages. */
+export async function getAnalyticsBundle(profile: Profile): Promise<AnalyticsBundle> {
+  const customers = await getCustomers(profile);
+  const [opportunities, quotations, allTargets, orders] = await Promise.all([
+    getOpportunities(profile),
+    getQuotations(profile),
+    getTargets(),
+    getOrders(profile, customers),
+  ]);
+  const recent = recentRevenueMap(orders);
+  const analytics = buildAnalytics(profile, customers, opportunities, quotations, allTargets, recent);
+  return {
+    ...analytics,
+    orders,
+    quotations,
+    allTargets,
+    recent,
+    monthlySeries: monthlyRevenueSeries(orders, 24),
+    yoy: revenueByFiscalYear(orders, 3),
+  };
 }
 
 export async function getCustomerById(id: string): Promise<Customer | null> {

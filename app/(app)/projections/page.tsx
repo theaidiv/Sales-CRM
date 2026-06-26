@@ -1,6 +1,5 @@
 import { requireProfile, isManager } from "@/lib/auth";
-import { getCustomers, getOpportunities, getQuotations, getTargets } from "@/lib/data";
-import { buildAnalytics } from "@/lib/analytics";
+import { getAnalyticsBundle } from "@/lib/data";
 import { explainProjection } from "@/lib/ai/insights";
 import { PageHeader, Card, CardHeader, Stat, AiCard, ProgressBar } from "@/components/ui";
 import { ProjectionBreakdownBar } from "@/components/Charts";
@@ -11,10 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function ProjectionsPage() {
   const profile = await requireProfile();
   const manager = isManager(profile.role);
-  const [customers, opportunities, quotations, targets] = await Promise.all([
-    getCustomers(profile), getOpportunities(profile), getQuotations(profile), getTargets(),
-  ]);
-  const { projection } = buildAnalytics(profile, customers, opportunities, quotations, targets);
+  const { projection } = await getAnalyticsBundle(profile);
   const ai = await explainProjection(projection);
 
   const b = projection.breakdown;

@@ -50,11 +50,51 @@ export function currentMonthKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-/** Current quarter key like '2026-Q2'. */
-export function currentQuarterKey(d = new Date()): string {
-  return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
+export function monthKeyOf(year: number, monthIndex0: number): string {
+  return `${year}-${String(monthIndex0 + 1).padStart(2, "0")}`;
 }
 
-export function currentYearKey(d = new Date()): string {
-  return String(d.getFullYear());
+// ---- Indian financial year (April–March) ----
+
+/** The starting calendar year of the FY a date falls in. June 2026 -> 2026; Feb 2026 -> 2025. */
+export function fiscalStartYear(d = new Date()): number {
+  return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+}
+
+/** FY label like 'FY2026-27'. */
+export function fiscalYearKey(d = new Date()): string {
+  const s = fiscalStartYear(d);
+  return `FY${s}-${String((s + 1) % 100).padStart(2, "0")}`;
+}
+
+/** Build an FY key from its start year. */
+export function fiscalYearKeyFromStart(startYear: number): string {
+  return `FY${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+}
+
+/** FY quarter index 1-4 (Q1 = Apr-Jun). */
+export function fiscalQuarter(d = new Date()): number {
+  return Math.floor(((d.getMonth() - 3 + 12) % 12) / 3) + 1;
+}
+
+/** FY quarter key like 'FY2026-27-Q1'. */
+export function fiscalQuarterKey(d = new Date()): string {
+  return `${fiscalYearKey(d)}-Q${fiscalQuarter(d)}`;
+}
+
+/** Enumerate {year, month0} for the last `count` months ending at `end` (inclusive). */
+export function lastNMonths(count: number, end = new Date()): { year: number; month0: number; key: string }[] {
+  const out: { year: number; month0: number; key: string }[] = [];
+  const d = new Date(end.getFullYear(), end.getMonth(), 1);
+  for (let i = count - 1; i >= 0; i--) {
+    const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
+    out.push({ year: m.getFullYear(), month0: m.getMonth(), key: monthKeyOf(m.getFullYear(), m.getMonth()) });
+  }
+  return out;
+}
+
+/** Short month label like "Apr '25". */
+export function shortMonthLabel(year: number, month0: number): string {
+  const m = new Date(year, month0, 1).toLocaleDateString("en-IN", { month: "short" });
+  return `${m} '${String(year % 100).padStart(2, "0")}`;
 }

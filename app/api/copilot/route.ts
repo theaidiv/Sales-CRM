@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireProfile } from "@/lib/auth";
-import { getCustomers, getOpportunities, getQuotations, getTargets } from "@/lib/data";
-import { buildAnalytics, selectTargets } from "@/lib/analytics";
+import { getAnalyticsBundle } from "@/lib/data";
 import { dailyActions } from "@/lib/engines/actions";
 import { recoveryScore } from "@/lib/engines/recovery";
 import { groqChat } from "@/lib/ai/groq";
@@ -16,11 +15,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing question" }, { status: 400 });
   }
 
-  const [customers, opportunities, quotations, targets] = await Promise.all([
-    getCustomers(profile), getOpportunities(profile), getQuotations(profile), getTargets(),
-  ]);
-  const { projection, risks } = buildAnalytics(profile, customers, opportunities, quotations, targets);
-  const periodT = selectTargets(profile, targets);
+  const { projection, risks, customers, opportunities, targets: periodT } = await getAnalyticsBundle(profile);
   const monthlyTarget = periodT.monthly?.target_amount ?? 0;
   const achieved = periodT.monthly?.achieved_amount ?? 0;
   const gap = Math.max(0, monthlyTarget - achieved);

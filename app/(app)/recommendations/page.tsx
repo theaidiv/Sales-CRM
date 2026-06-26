@@ -1,6 +1,5 @@
 import { requireProfile } from "@/lib/auth";
-import { getCustomers, getOpportunities, getQuotations, getTargets } from "@/lib/data";
-import { buildAnalytics, selectTargets } from "@/lib/analytics";
+import { getAnalyticsBundle } from "@/lib/data";
 import { dailyActions, targetAdvisor } from "@/lib/engines/actions";
 import { recoveryScore } from "@/lib/engines/recovery";
 import { PageHeader, Card, CardHeader, Badge, AiCard, Stat } from "@/components/ui";
@@ -15,12 +14,7 @@ const KIND_ICON: Record<string, any> = {
 
 export default async function RecommendationsPage() {
   const profile = await requireProfile();
-  const [customers, opportunities, quotations, targets] = await Promise.all([
-    getCustomers(profile), getOpportunities(profile), getQuotations(profile), getTargets(),
-  ]);
-
-  const { projection, risks } = buildAnalytics(profile, customers, opportunities, quotations, targets);
-  const periodT = selectTargets(profile, targets);
+  const { projection, risks, customers, opportunities, targets: periodT } = await getAnalyticsBundle(profile);
   const monthlyTarget = periodT.monthly?.target_amount ?? 0;
   const achieved = periodT.monthly?.achieved_amount ?? 0;
   const gap = Math.max(0, monthlyTarget - achieved);

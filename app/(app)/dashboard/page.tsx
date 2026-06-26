@@ -1,9 +1,8 @@
 import { requireProfile, isManager } from "@/lib/auth";
-import { getCustomers, getOpportunities, getQuotations, getTargets, getProfiles } from "@/lib/data";
-import { buildAnalytics } from "@/lib/analytics";
+import { getAnalyticsBundle, getProfiles } from "@/lib/data";
 import { explainProjection } from "@/lib/ai/insights";
 import { Card, CardHeader, Stat, Badge, ProgressBar, PageHeader, AiCard } from "@/components/ui";
-import { CategoryPie, PipelineBar, TeamBar } from "@/components/Charts";
+import { CategoryPie, PipelineBar, TeamBar, RevenueTrend, YoYBar } from "@/components/Charts";
 import { inr, pct } from "@/lib/utils";
 import { STAGE_PROBABILITY } from "@/lib/types";
 import { AlertTriangle } from "lucide-react";
@@ -15,17 +14,12 @@ export default async function DashboardPage() {
   const profile = await requireProfile();
   const manager = isManager(profile.role);
 
-  const [customers, opportunities, quotations, targets, profiles] = await Promise.all([
-    getCustomers(profile),
-    getOpportunities(profile),
-    getQuotations(profile),
-    getTargets(),
+  const [bundle, profiles] = await Promise.all([
+    getAnalyticsBundle(profile),
     getProfiles(),
   ]);
-
-  const { projection, forecastQuarter, targets: periodT, risks } = buildAnalytics(
-    profile, customers, opportunities, quotations, targets
-  );
+  const { projection, forecastQuarter, targets: periodT, risks, customers, opportunities, monthlySeries, yoy } = bundle;
+  const targets = bundle.allTargets;
   const aiExplain = await explainProjection(projection);
 
   const monthlyTarget = periodT.monthly?.target_amount ?? 0;
@@ -93,6 +87,28 @@ export default async function DashboardPage() {
 
       <div className="mt-4">
         <AiCard title="AI Projection Insight">{aiExplain}</AiCard>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader title="Revenue Trend" subtitle="Monthly revenue, last 24 months" />
+          <div className="p-2"><RevenueTrend data={monthlySeries} /></div>
+        </Card>
+        <Card>
+          <CardHeader title="Year-on-Year" subtitle="Revenue by financial year" />
+          <div className="p-2"><YoYBar data={yoy} /></div>
+          <div className="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
+            {yoy.length >= 2 && yoy[yoy.length - 2].revenue > 0 && (
+              <span>
+                Latest FY tracking at{" "}
+                <strong className="text-slate-700">
+                  {pct((yoy[yoy.length - 1].revenue / yoy[yoy.length - 2].revenue) * 100)}
+                </strong>{" "}
+                of last FY (in progress).
+              </span>
+            )}
+          </div>
+        </Card>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">

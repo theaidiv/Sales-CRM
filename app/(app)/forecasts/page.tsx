@@ -1,7 +1,5 @@
 import { requireProfile, isManager } from "@/lib/auth";
-import { getCustomers, getOpportunities, getQuotations, getTargets } from "@/lib/data";
-import { buildAnalytics, selectTargets } from "@/lib/analytics";
-import { projectMonth } from "@/lib/engines/projection";
+import { getAnalyticsBundle } from "@/lib/data";
 import { forecastFromProjection } from "@/lib/engines/forecast";
 import { explainForecast } from "@/lib/ai/insights";
 import { PageHeader, Card, CardHeader, Stat, AiCard } from "@/components/ui";
@@ -13,15 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function ForecastsPage() {
   const profile = await requireProfile();
   const manager = isManager(profile.role);
-  const [customers, opportunities, quotations, targets] = await Promise.all([
-    getCustomers(profile), getOpportunities(profile), getQuotations(profile), getTargets(),
-  ]);
-
-  const periodT = selectTargets(profile, targets);
-  const projection = projectMonth({
-    customers, opportunities, quotations,
-    monthlyTarget: periodT.monthly?.target_amount ?? 0,
-  });
+  const { projection, targets: periodT } = await getAnalyticsBundle(profile);
 
   // Run-rate forecast over each horizon, compared against the period target.
   const monthly = forecastFromProjection(projection, "Monthly", periodT.monthly?.target_amount ?? 0, 0);
