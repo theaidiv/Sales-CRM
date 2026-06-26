@@ -22,12 +22,6 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      setError("Supabase is not configured for this deployment (missing NEXT_PUBLIC_SUPABASE_URL / ANON_KEY). Set them in Vercel and redeploy without cache.");
-      setLoading(false);
-      return;
-    }
-
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });

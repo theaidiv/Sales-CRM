@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase/config";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -9,8 +10,8 @@ export async function middleware(request: NextRequest) {
   const isPublicAsset =
     path.startsWith("/_next") || path.startsWith("/favicon") || path === "/api/health";
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = SUPABASE_URL;
+  const anon = SUPABASE_ANON_KEY;
 
   // If config is missing or auth lookup fails, never hard-500 — fall back to
   // sending the user to the login page (or letting public assets through).
