@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { Drillable, DrillHint, type DrillDetail } from "@/components/DrillDown";
 import { AnimatedNumber, type NumKind } from "@/components/AnimatedNumber";
+import { typeStyle } from "@/lib/typeColors";
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 
 export function Card({ className, children, interactive }: { className?: string; children: ReactNode; interactive?: boolean }) {
@@ -90,27 +91,11 @@ export function Stat({
   return detail ? <Drillable detail={detail} className="h-full">{body}</Drillable> : body;
 }
 
-const BADGE_TONES: Record<string, string> = {
-  Regular: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  Detached: "bg-rose-50 text-rose-700 ring-rose-200",
-  New: "bg-sky-50 text-sky-700 ring-sky-200",
-  Healthy: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  Stable: "bg-sky-50 text-sky-700 ring-sky-200",
-  "At Risk": "bg-amber-50 text-amber-700 ring-amber-200",
-  "Detached Risk": "bg-rose-50 text-rose-700 ring-rose-200",
-  High: "bg-rose-50 text-rose-700 ring-rose-200",
-  Medium: "bg-amber-50 text-amber-700 ring-amber-200",
-  Low: "bg-ink-100 text-ink-600 ring-ink-200",
-  Won: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  Lost: "bg-ink-100 text-ink-500 ring-ink-200",
-  Negotiation: "bg-violet-50 text-violet-700 ring-violet-200",
-  "Quotation Shared": "bg-indigo-50 text-indigo-700 ring-indigo-200",
-};
-
-export function Badge({ children }: { children: string }) {
-  const tone = BADGE_TONES[children] ?? "bg-ink-100 text-ink-600 ring-ink-200";
+export function Badge({ children, dot = true }: { children: string; dot?: boolean }) {
+  const s = typeStyle(children);
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset", tone)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r px-2 py-0.5 text-xs font-medium ring-1 ring-inset", s.grad, s.text, s.ring)}>
+      {dot && <span className={cn("h-1.5 w-1.5 rounded-full bg-gradient-to-br", s.dot)} />}
       {children}
     </span>
   );
@@ -142,11 +127,11 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 export function AiCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center gap-2.5 border-b border-violet-100 bg-gradient-to-r from-violet-50 via-brand-50 to-indigo-50 px-5 py-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-violet-600 text-[11px] font-bold text-white shadow-sm">AI</span>
-        <h3 className="font-display text-sm font-semibold text-violet-900">{title}</h3>
-        <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-violet-400">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-400" /> Live
+      <div className="flex items-center gap-2.5 border-b border-brand-100 bg-gradient-to-r from-brand-50 via-cyan-50 to-emerald-50 px-5 py-3">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-cyan-500 text-[11px] font-bold text-white shadow-sm">AI</span>
+        <h3 className="font-display text-sm font-semibold text-brand-900">{title}</h3>
+        <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-brand-500">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-400" /> Live
         </span>
       </div>
       <div className="px-5 py-4 text-sm leading-relaxed text-ink-700">{children}</div>

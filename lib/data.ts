@@ -143,16 +143,34 @@ export async function getCustomerTimeline(customerId: string): Promise<{
   activities: Activity[];
   comments: Comment[];
   opportunities: Opportunity[];
+  orders: OrderRow[];
+  quotations: Quotation[];
 }> {
   const supabase = createClient();
-  const [a, c, o] = await Promise.all([
-    supabase.from("activities").select("*").eq("customer_id", customerId).order("activity_date", { ascending: false }).limit(50),
+  const [a, c, o, ord, q] = await Promise.all([
+    supabase.from("activities").select("*").eq("customer_id", customerId).order("activity_date", { ascending: false }).limit(100),
     supabase.from("comments").select("*").eq("entity_type", "customer").eq("entity_id", customerId).order("created_at", { ascending: false }).limit(50),
     supabase.from("opportunities").select("*").eq("customer_id", customerId).order("value", { ascending: false }),
+    supabase.from("orders").select("*").eq("customer_id", customerId).order("order_date", { ascending: false }).limit(100),
+    supabase.from("quotations").select("*").eq("customer_id", customerId).order("quote_date", { ascending: false }).limit(50),
   ]);
   return {
     activities: (a.data as Activity[]) ?? [],
     comments: (c.data as Comment[]) ?? [],
     opportunities: (o.data as Opportunity[]) ?? [],
+    orders: (ord.data as OrderRow[]) ?? [],
+    quotations: (q.data as Quotation[]) ?? [],
   };
+}
+
+export async function getOpportunityById(id: string): Promise<Opportunity | null> {
+  const supabase = createClient();
+  const { data } = await supabase.from("opportunities").select("*").eq("id", id).single();
+  return (data as Opportunity) ?? null;
+}
+
+export async function getOpportunityComments(opportunityId: string): Promise<Comment[]> {
+  const supabase = createClient();
+  const { data } = await supabase.from("comments").select("*").eq("entity_type", "opportunity").eq("entity_id", opportunityId).order("created_at", { ascending: false });
+  return (data as Comment[]) ?? [];
 }

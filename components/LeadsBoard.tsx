@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import type { Opportunity, Customer, Profile, OppStage } from "@/lib/types";
 import { STAGE_PROBABILITY } from "@/lib/types";
 import { Badge, Stat } from "@/components/ui";
@@ -72,14 +73,14 @@ export function LeadsBoard({
               </div>
               <div className="max-h-[480px] space-y-2 overflow-y-auto p-3">
                 {cards.slice(0, 40).map((o) => (
-                  <div key={o.id} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-                    <p className="text-sm font-medium text-slate-800">{o.title}</p>
-                    <p className="mt-0.5 text-xs text-slate-400">{custName.get(o.customer_id ?? "") ?? "—"}</p>
+                  <Link key={o.id} href={`/leads/${o.id}`} className="block rounded-lg border border-ink-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card-hover">
+                    <p className="text-sm font-medium text-ink-800">{o.title}</p>
+                    <p className="mt-0.5 text-xs text-ink-400">{custName.get(o.customer_id ?? "") ?? "—"}</p>
                     <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-slate-700">{inr(o.value)}</span>
-                      <span className="text-xs text-slate-400">{o.probability}%</span>
+                      <span className="text-sm font-semibold text-ink-700 tnum">{inr(o.value)}</span>
+                      <span className="text-xs text-ink-400">{o.probability}%</span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 {cards.length === 0 && <p className="py-4 text-center text-xs text-slate-400">Empty</p>}
               </div>

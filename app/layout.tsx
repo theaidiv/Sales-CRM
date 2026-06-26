@@ -11,7 +11,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AI Sales OS",
+  title: "Saaya Group — Sales OS",
   description: "AI-powered sales planning, forecasting & customer intelligence",
 };
 
