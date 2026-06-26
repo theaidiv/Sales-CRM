@@ -42,12 +42,12 @@ export default function LoginPage() {
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ink-950 p-4">
       {/* ambient glows + grid */}
       <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-brand-600/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-violet-600/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-accent-500/30 blur-3xl" />
       <div className="pointer-events-none absolute inset-0 bg-grid-faint [background-size:40px_40px] opacity-[0.07]" />
 
       <div className="relative w-full max-w-md animate-fade-up">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-emerald-500 font-display text-3xl font-black text-white shadow-glow">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 font-display text-3xl font-black text-white shadow-glow">
             S
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-white">Saaya Group</h1>

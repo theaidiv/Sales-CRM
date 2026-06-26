@@ -127,8 +127,8 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 export function AiCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center gap-2.5 border-b border-brand-100 bg-gradient-to-r from-brand-50 via-cyan-50 to-emerald-50 px-5 py-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-cyan-500 text-[11px] font-bold text-white shadow-sm">AI</span>
+      <div className="flex items-center gap-2.5 border-b border-brand-100 bg-gradient-to-r from-brand-50 via-purple-50 to-accent-50 px-5 py-3">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 text-[11px] font-bold text-white shadow-sm">AI</span>
         <h3 className="font-display text-sm font-semibold text-brand-900">{title}</h3>
         <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-brand-500">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-400" /> Live

@@ -42,7 +42,7 @@ export function NewCustomerModal({ customers, sellers }: { customers: Customer[]
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-brand-600 to-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90">
+      <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-brand-600 to-accent-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90">
         <Plus size={16} /> Add Customer
       </button>
 
@@ -94,7 +94,7 @@ export function NewCustomerModal({ customers, sellers }: { customers: Customer[]
               {error && <p className="text-sm text-rose-600">{error}</p>}
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={() => setOpen(false)} className="rounded-lg px-4 py-2 text-sm font-medium text-ink-600 hover:bg-ink-100">Cancel</button>
-                <button type="submit" disabled={saving} className="rounded-lg bg-gradient-to-r from-brand-600 to-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">{saving ? "Saving…" : "Add Customer"}</button>
+                <button type="submit" disabled={saving} className="rounded-lg bg-gradient-to-r from-brand-600 to-accent-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">{saving ? "Saving…" : "Add Customer"}</button>
               </div>
             </form>
           </div>
