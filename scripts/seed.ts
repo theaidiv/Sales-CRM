@@ -291,32 +291,26 @@ async function main() {
   const quarterKey = `${now.getFullYear()}-Q${Math.floor(now.getMonth() / 3) + 1}`;
   const yearKey = String(now.getFullYear());
 
-  // Achieved this month = sum of orders this month overall and per exec.
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  let companyAchievedMonth = 0;
-  const execAchievedMonth: Record<string, number> = {};
-  customers.forEach((c) => {
-    c._orders.forEach((o) => {
-      if (new Date(o.order_date).getTime() >= monthStart) {
-        companyAchievedMonth += o.amount;
-        execAchievedMonth[c.assigned_to] = (execAchievedMonth[c.assigned_to] || 0) + o.amount;
-      }
-    });
-  });
-
+  // Targets are scaled to the seeded data (~₹23-24Cr/month projected company-wide)
+  // so the demo tells a coherent story: mid-period, behind pace, small closeable gap.
+  const CR = 10000000; // 1 crore in rupees
   const targetRows: any[] = [];
-  // Company
-  targetRows.push({ scope: "company", period_type: "monthly", period: monthKey, owner_id: null, target_amount: 25000000, achieved_amount: Math.round(companyAchievedMonth) });
-  targetRows.push({ scope: "company", period_type: "quarterly", period: quarterKey, owner_id: null, target_amount: 75000000, achieved_amount: Math.round(companyAchievedMonth * 2.4) });
-  targetRows.push({ scope: "company", period_type: "annual", period: yearKey, owner_id: null, target_amount: 300000000, achieved_amount: Math.round(companyAchievedMonth * 9) });
-  // Per exec
-  for (const u of USERS.filter((x) => x.role === "Sales Executive")) {
+  // Company — monthly ₹25Cr (≈61% achieved), quarterly ₹70Cr (≈86%), annual ₹280Cr (≈49%)
+  targetRows.push({ scope: "company", period_type: "monthly", period: monthKey, owner_id: null, target_amount: 25 * CR, achieved_amount: Math.round(15.2 * CR) });
+  targetRows.push({ scope: "company", period_type: "quarterly", period: quarterKey, owner_id: null, target_amount: 70 * CR, achieved_amount: Math.round(60.4 * CR) });
+  targetRows.push({ scope: "company", period_type: "annual", period: yearKey, owner_id: null, target_amount: 280 * CR, achieved_amount: Math.round(138 * CR) });
+
+  // Per exec — monthly ₹6Cr each, with varied achievement for a realistic team chart.
+  const execList = USERS.filter((x) => x.role === "Sales Executive");
+  const ratios = [0.78, 0.63, 0.55, 0.70]; // achievement vs monthly target
+  execList.forEach((u, i) => {
     const id = userIds[u.email];
-    const ach = Math.round(execAchievedMonth[id] || 0);
-    targetRows.push({ scope: "user", period_type: "monthly", period: monthKey, owner_id: id, team: u.team, target_amount: 6000000, achieved_amount: ach });
-    targetRows.push({ scope: "user", period_type: "quarterly", period: quarterKey, owner_id: id, team: u.team, target_amount: 18000000, achieved_amount: Math.round(ach * 2.4) });
-    targetRows.push({ scope: "user", period_type: "annual", period: yearKey, owner_id: id, team: u.team, target_amount: 72000000, achieved_amount: Math.round(ach * 9) });
-  }
+    const monthlyTarget = 6 * CR;
+    const monthlyAch = Math.round(monthlyTarget * ratios[i % ratios.length]);
+    targetRows.push({ scope: "user", period_type: "monthly", period: monthKey, owner_id: id, team: u.team, target_amount: monthlyTarget, achieved_amount: monthlyAch });
+    targetRows.push({ scope: "user", period_type: "quarterly", period: quarterKey, owner_id: id, team: u.team, target_amount: 17 * CR, achieved_amount: Math.round(monthlyAch * 4.0) });
+    targetRows.push({ scope: "user", period_type: "annual", period: yearKey, owner_id: id, team: u.team, target_amount: 70 * CR, achieved_amount: Math.round(monthlyAch * 9.0) });
+  });
   await db.from("targets").insert(targetRows);
   console.log(`  inserted ${targetRows.length} targets`);
 

@@ -54,8 +54,9 @@ export function buildAnalytics(
   const projection = projectMonth({ customers, opportunities, quotations, monthlyTarget });
 
   const quarterlyTarget = targets.quarterly?.target_amount ?? monthlyTarget * 3;
-  const quarterlyAchieved = targets.quarterly?.achieved_amount ?? 0;
-  const forecastQuarter = forecastFromProjection(projection, "Quarterly", quarterlyTarget, quarterlyAchieved);
+  // Forecast is a run-rate projection over the horizon, compared to target.
+  // (Banked-to-date "achieved" is shown separately on the targets/dashboard.)
+  const forecastQuarter = forecastFromProjection(projection, "Quarterly", quarterlyTarget, 0);
 
   const risks = detectRisks(customers, opportunities, { targetGap: projection.targetGap });
 

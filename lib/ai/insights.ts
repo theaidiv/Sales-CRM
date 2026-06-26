@@ -26,7 +26,7 @@ export async function summarizeCustomer(input: {
           .join("\n")}`,
       },
     ],
-    { temperature: 0.3, maxTokens: 280 }
+    { temperature: 0.3, maxTokens: 500 }
   );
   if (ai) return ai;
 
@@ -61,7 +61,7 @@ export async function explainProjection(p: ProjectionResult): Promise<string> {
       },
       { role: "user", content: ctx },
     ],
-    { temperature: 0.3, maxTokens: 220 }
+    { temperature: 0.3, maxTokens: 500 }
   );
   if (ai) return ai;
 
@@ -91,7 +91,7 @@ export async function explainForecast(f: ForecastResult): Promise<string> {
       },
       { role: "user", content: ctx },
     ],
-    { temperature: 0.3, maxTokens: 220 }
+    { temperature: 0.3, maxTokens: 500 }
   );
   if (ai) return ai;
 

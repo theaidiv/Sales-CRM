@@ -23,9 +23,10 @@ export default async function ForecastsPage() {
     monthlyTarget: periodT.monthly?.target_amount ?? 0,
   });
 
+  // Run-rate forecast over each horizon, compared against the period target.
   const monthly = forecastFromProjection(projection, "Monthly", periodT.monthly?.target_amount ?? 0, 0);
-  const quarterly = forecastFromProjection(projection, "Quarterly", periodT.quarterly?.target_amount ?? 0, periodT.quarterly?.achieved_amount ?? 0);
-  const annual = forecastFromProjection(projection, "Annual", periodT.annual?.target_amount ?? 0, periodT.annual?.achieved_amount ?? 0);
+  const quarterly = forecastFromProjection(projection, "Quarterly", periodT.quarterly?.target_amount ?? 0, 0);
+  const annual = forecastFromProjection(projection, "Annual", periodT.annual?.target_amount ?? 0, 0);
 
   const ai = await explainForecast(quarterly);
 
