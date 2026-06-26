@@ -65,7 +65,7 @@ export function AssistantWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="group fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-accent-600 text-white shadow-glow transition hover:scale-105"
+          className="group fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-accent-500 text-white shadow-glow transition hover:scale-105"
           aria-label="Open AI assistant"
         >
           <Sparkles size={24} />
@@ -76,7 +76,7 @@ export function AssistantWidget() {
       {/* Panel */}
       {open && (
         <div className="fixed bottom-6 right-6 z-40 flex h-[600px] max-h-[85vh] w-[400px] max-w-[calc(100vw-2rem)] animate-scale-in flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-elevated">
-          <div className="flex items-center gap-2.5 bg-gradient-to-r from-brand-600 to-accent-600 px-4 py-3 text-white">
+          <div className="flex items-center gap-2.5 bg-gradient-to-r from-brand-700 to-accent-500 px-4 py-3 text-white">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20"><Sparkles size={17} /></span>
             <div>
               <p className="font-display text-sm font-semibold">Saaya AI Assistant</p>
@@ -88,7 +88,7 @@ export function AssistantWidget() {
           <div className="flex-1 space-y-3 overflow-y-auto bg-ink-50/40 p-4">
             {messages.map((m, i) => (
               <div key={i} className={cn("flex gap-2", m.role === "user" && "flex-row-reverse")}>
-                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold", m.role === "user" ? "bg-brand-600 text-white" : "bg-gradient-to-br from-brand-500 to-accent-500 text-white")}>
+                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold", m.role === "user" ? "bg-brand-600 text-white" : "bg-gradient-to-br from-brand-700 to-accent-400 text-white")}>
                   {m.role === "user" ? "You" : <Sparkles size={14} />}
                 </div>
                 <div className={cn("max-w-[78%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm leading-relaxed", m.role === "user" ? "bg-brand-600 text-white" : "border border-ink-100 bg-white text-ink-700")}>
@@ -98,7 +98,7 @@ export function AssistantWidget() {
                 </div>
               </div>
             ))}
-            {loading && <div className="flex gap-2"><div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 text-white"><Sparkles size={14} /></div><div className="rounded-2xl border border-ink-100 bg-white px-3.5 py-2.5 text-sm text-ink-400">Thinking…</div></div>}
+            {loading && <div className="flex gap-2"><div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-700 to-accent-400 text-white"><Sparkles size={14} /></div><div className="rounded-2xl border border-ink-100 bg-white px-3.5 py-2.5 text-sm text-ink-400">Thinking…</div></div>}
             <div ref={endRef} />
           </div>
 
@@ -114,7 +114,7 @@ export function AssistantWidget() {
             <input ref={fileRef} type="file" accept="image/*" onChange={onFile} className="hidden" />
             <button type="button" onClick={() => fileRef.current?.click()} title="Upload image" className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-400 transition hover:bg-ink-100 hover:text-brand-600"><Paperclip size={17} /></button>
             <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask or instruct…" className="flex-1 rounded-lg border border-ink-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
-            <button type="submit" disabled={loading} className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-brand-600 to-accent-600 text-white transition hover:opacity-90 disabled:opacity-50"><Send size={15} /></button>
+            <button type="submit" disabled={loading} className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-brand-700 to-accent-500 text-white transition hover:opacity-90 disabled:opacity-50"><Send size={15} /></button>
           </form>
         </div>
       )}

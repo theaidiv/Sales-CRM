@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { X, ChevronRight } from "lucide-react";
 
@@ -10,12 +11,13 @@ export interface DrillColumn {
   align?: "left" | "right";
 }
 
-/** A drill-down payload: pre-formatted rows so it's fully serializable server→client. */
+/** A drill-down payload: pre-formatted rows so it's fully serializable server→client.
+ *  A row may include `_href` to make its first cell a clickable link. */
 export interface DrillDetail {
   title: string;
   subtitle?: string;
   columns: DrillColumn[];
-  rows: Record<string, string | number>[];
+  rows: (Record<string, string | number> & { _href?: string })[];
   footer?: string;
 }
 
@@ -79,10 +81,16 @@ export function DrillProvider({ children }: { children: ReactNode }) {
                 </thead>
                 <tbody className="divide-y divide-ink-50">
                   {detail.rows.map((r, i) => (
-                    <tr key={i} className="transition hover:bg-brand-50/40">
-                      {detail.columns.map((c) => (
+                    <tr key={i} className="group/row transition hover:bg-brand-50/40">
+                      {detail.columns.map((c, ci) => (
                         <td key={c.key} className={cn("px-6 py-2.5 text-ink-700", c.align === "right" && "text-right tnum font-medium")}>
-                          {r[c.key] ?? "—"}
+                          {ci === 0 && r._href ? (
+                            <Link href={r._href} onClick={close} className="inline-flex items-center gap-1 font-medium text-ink-800 transition group-hover/row:text-brand-700 hover:underline">
+                              {r[c.key] ?? "—"} <ChevronRight size={13} className="opacity-0 transition group-hover/row:opacity-100" />
+                            </Link>
+                          ) : (
+                            r[c.key] ?? "—"
+                          )}
                         </td>
                       ))}
                     </tr>

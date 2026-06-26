@@ -47,7 +47,7 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-md animate-fade-up">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 font-display text-3xl font-black text-white shadow-glow">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-700 to-accent-400 font-display text-3xl font-black text-white shadow-glow">
             S
           </div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-white">Saaya Group</h1>

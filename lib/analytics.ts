@@ -100,12 +100,59 @@ export function revenueByFiscalYear(orders: OrderRow[], years = 3): YoYPoint[] {
 // ---- Next-month projection (per-user planning sheet) ----
 
 export interface ProjectionRow {
+  id: string;
   company: string;
   category: string;
   owner: string;
+  ownerId: string;
   country: string;
   expected: number;
   basis: string;
+}
+
+/** Per-customer expected revenue for the month at `refDate` (run-rate + recovery + weighted pipeline). */
+export function projectionRows(
+  customers: Customer[],
+  opportunities: Opportunity[],
+  recent: Record<string, number>,
+  refDate: Date,
+  nameById: Map<string, string>
+): ProjectionRow[] {
+  const refTime = refDate.getTime();
+  const oppByCust = new Map<string, Opportunity[]>();
+  for (const o of opportunities) {
+    if (!o.customer_id) continue;
+    const arr = oppByCust.get(o.customer_id) ?? [];
+    arr.push(o);
+    oppByCust.set(o.customer_id, arr);
+  }
+  return customers.map((c) => {
+    let expected = 0;
+    const basis: string[] = [];
+    if (c.category === "Regular") {
+      const v = (recent[c.id] ?? 0) * (0.6 + (c.health_score / 100) * 0.4);
+      if (v > 0) { expected += v; basis.push("run-rate"); }
+    } else if (c.category === "Detached") {
+      const r = recoveryScore(c);
+      const v = (r.potentialRevenue / 12) * r.probability;
+      if (v > 0) { expected += v; basis.push("recovery"); }
+    } else {
+      expected += 40000 * (c.health_score / 100);
+      basis.push("new");
+    }
+    for (const o of oppByCust.get(c.id) ?? []) {
+      if (o.stage === "Won" || o.stage === "Lost") continue;
+      const monthsOut = (new Date(o.expected_close_date ?? "").getTime() - refTime) / (1000 * 60 * 60 * 24 * 30.44);
+      const cf = isNaN(monthsOut) ? 0.4 : monthsOut <= 1 ? 0.9 : monthsOut <= 2 ? 0.5 : monthsOut <= 3 ? 0.3 : 0.15;
+      const v = o.value * STAGE_PROBABILITY[o.stage] * cf;
+      if (v > 0) { expected += v; if (!basis.includes("pipeline")) basis.push("pipeline"); }
+    }
+    return {
+      id: c.id, company: c.company_name, category: c.category,
+      owner: nameById.get(c.assigned_to ?? "") ?? "—", ownerId: c.assigned_to ?? "",
+      country: c.country ?? "—", expected: Math.round(expected), basis: basis.join(", ") || "—",
+    };
+  }).filter((r) => r.expected > 0).sort((a, b) => b.expected - a.expected);
 }
 
 export interface NextMonthPlan {
@@ -143,49 +190,7 @@ export function buildNextMonthPlan(
     customers, opportunities, quotations, monthlyTarget: target,
     recentRevenueByCustomer: recent, referenceDate: refDate,
   });
-
-  // Per-customer expected contribution → the downloadable projection sheet.
-  const refTime = refDate.getTime();
-  const oppByCust = new Map<string, Opportunity[]>();
-  for (const o of opportunities) {
-    if (!o.customer_id) continue;
-    const arr = oppByCust.get(o.customer_id) ?? [];
-    arr.push(o);
-    oppByCust.set(o.customer_id, arr);
-  }
-
-  const rows: ProjectionRow[] = customers.map((c) => {
-    let expected = 0;
-    const basis: string[] = [];
-    if (c.category === "Regular") {
-      const rr = recent[c.id] ?? 0;
-      const v = rr * (0.6 + (c.health_score / 100) * 0.4);
-      if (v > 0) { expected += v; basis.push("run-rate"); }
-    } else if (c.category === "Detached") {
-      const r = recoveryScore(c);
-      const v = (r.potentialRevenue / 12) * r.probability;
-      if (v > 0) { expected += v; basis.push("recovery"); }
-    } else {
-      expected += 40000 * (c.health_score / 100);
-      basis.push("new");
-    }
-    for (const o of oppByCust.get(c.id) ?? []) {
-      if (o.stage === "Won" || o.stage === "Lost") continue;
-      const monthsOut = (new Date(o.expected_close_date ?? "").getTime() - refTime) / (1000 * 60 * 60 * 24 * 30.44);
-      const cf = isNaN(monthsOut) ? 0.4 : monthsOut <= 1 ? 0.9 : monthsOut <= 2 ? 0.5 : monthsOut <= 3 ? 0.3 : 0.15;
-      const v = o.value * STAGE_PROBABILITY[o.stage] * cf;
-      if (v > 0) { expected += v; if (!basis.includes("pipeline")) basis.push("pipeline"); }
-    }
-    return {
-      company: c.company_name,
-      category: c.category,
-      owner: nameById.get(c.assigned_to ?? "") ?? "—",
-      country: c.country ?? "—",
-      expected: Math.round(expected),
-      basis: basis.join(", ") || "—",
-    };
-  }).filter((r) => r.expected > 0).sort((a, b) => b.expected - a.expected);
-
+  const rows = projectionRows(customers, opportunities, recent, refDate, nameById);
   return { monthKey, projection, target, rows };
 }
 

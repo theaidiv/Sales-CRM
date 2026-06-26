@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     catDetails[cat] = {
       title: `${cat} customers`, subtitle: `${customers.filter((c) => c.category === cat).length} accounts`,
       columns: [{ key: "company", label: "Company" }, { key: "owner", label: "Owner" }, { key: "revenue", label: "Revenue", align: "right" }],
-      rows: list.map((c) => ({ company: c.company_name, owner: nameById.get(c.assigned_to ?? "") ?? "—", revenue: inr(c.total_revenue) })),
+      rows: list.map((c) => ({ company: c.company_name, owner: nameById.get(c.assigned_to ?? "") ?? "—", revenue: inr(c.total_revenue), _href: `/customers/${c.id}` })),
       footer: `Total lifetime revenue: ${inr(list.reduce((s, c) => s + c.total_revenue, 0))}`,
     };
   });
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
     pipeDetails[stage] = {
       title: `${stage} — opportunities`, subtitle: `${list.length} open`,
       columns: [{ key: "lead", label: "Lead" }, { key: "customer", label: "Customer" }, { key: "value", label: "Value", align: "right" }],
-      rows: list.map((o) => ({ lead: o.title, customer: custName.get(o.customer_id ?? "") ?? "—", value: inr(o.value) })),
+      rows: list.map((o) => ({ lead: o.title, customer: custName.get(o.customer_id ?? "") ?? "—", value: inr(o.value), _href: `/leads/${o.id}` })),
       footer: `Weighted: ${inr(list.reduce((s, o) => s + o.value * STAGE_PROBABILITY[o.stage], 0))}`,
     };
   });
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
     const label = shortMonthLabel(m.year, m.month0);
     const byCust = new Map<string, number>();
     orders.filter((o) => o.order_date.startsWith(m.key)).forEach((o) => o.customer_id && byCust.set(o.customer_id, (byCust.get(o.customer_id) ?? 0) + o.amount));
-    const rows = [...byCust.entries()].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([id, amt]) => ({ customer: custName.get(id) ?? "—", amount: inr(amt) }));
+    const rows = [...byCust.entries()].sort((a, b) => b[1] - a[1]).slice(0, 60).map(([id, amt]) => ({ customer: custName.get(id) ?? "—", amount: inr(amt), _href: `/customers/${id}` }));
     monthDetails[label] = {
       title: `Revenue — ${label}`, subtitle: `${rows.length} customers ordered`,
       columns: [{ key: "customer", label: "Customer" }, { key: "amount", label: "Revenue", align: "right" }],
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
   const gapDetail: DrillDetail = {
     title: "Closing the gap", subtitle: `${inr(gap)} to this month's target — best opportunities to close`,
     columns: [{ key: "lead", label: "Lead" }, { key: "stage", label: "Stage" }, { key: "value", label: "Value", align: "right" }],
-    rows: topOpen.map((o) => ({ lead: o.title, stage: o.stage, value: inr(o.value) })),
+    rows: topOpen.map((o) => ({ lead: o.title, stage: o.stage, value: inr(o.value), _href: `/leads/${o.id}` })),
   };
 
   // ---------- Chart data ----------
@@ -121,7 +121,7 @@ export default async function DashboardPage() {
     teamDetails[e.name.split(" ")[0]] = {
       title: `${e.name} — accounts`, subtitle: `${list.length} customers`,
       columns: [{ key: "company", label: "Company" }, { key: "cat", label: "Category" }, { key: "revenue", label: "Revenue", align: "right" }],
-      rows: list.map((c) => ({ company: c.company_name, cat: c.category, revenue: inr(c.total_revenue) })),
+      rows: list.map((c) => ({ company: c.company_name, cat: c.category, revenue: inr(c.total_revenue), _href: `/customers/${c.id}` })),
     };
   });
 
@@ -137,12 +137,13 @@ export default async function DashboardPage() {
       />
 
       <div className="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Monthly Target" animate={monthlyTarget} valueKind="inr" sub={periodT.monthly?.period} icon={<Target size={16} />} />
+        <Stat label="Monthly Target" animate={monthlyTarget} valueKind="inr" sub={periodT.monthly?.period} icon={<Target size={16} />} info="This month's revenue goal, including any backlog carried over from last month." />
         <Stat label="Achieved" animate={achieved} valueKind="inr" tone="good" sub={pct(achievementPct) + " of target"} icon={<Wallet size={16} />}
+          info="Revenue booked so far this month (from actual orders). Click to see the per-seller breakdown."
           detail={{ title: "Achieved — by seller", subtitle: "Current month", columns: [{ key: "seller", label: "Seller" }, { key: "target", label: "Target", align: "right" }, { key: "ach", label: "Achieved", align: "right" }],
             rows: sellerProfiles.map((e) => { const t = targets.find((x) => x.scope === "user" && x.period_type === "monthly" && x.owner_id === e.id); return { seller: e.name, target: inr(t?.target_amount ?? 0), ach: inr(t?.achieved_amount ?? 0) }; }) }} />
-        <Stat label="Gap" animate={gap} valueKind="inr" tone={gap > 0 ? "bad" : "good"} sub="remaining this month" icon={<AlertTriangle size={16} />} detail={gapDetail} />
-        <Stat label="AI Projection" animate={projection.projectedRevenue} valueKind="inr" tone="warn" sub={`${projection.confidence}% confidence`} icon={<Sparkles size={16} />} detail={projectionDetail} />
+        <Stat label="Gap" animate={gap} valueKind="inr" tone={gap > 0 ? "bad" : "good"} sub="remaining this month" icon={<AlertTriangle size={16} />} info="Target minus achieved. Click to see the best opportunities to close the gap." detail={gapDetail} />
+        <Stat label="AI Projection" animate={projection.projectedRevenue} valueKind="inr" tone="warn" sub={`${projection.confidence}% confidence`} icon={<Sparkles size={16} />} info="Where the month is projected to land based on run-rate + pipeline + recovery. Click for the source breakdown." detail={projectionDetail} />
       </div>
 
       <Card className="mt-4 p-5">
@@ -158,11 +159,11 @@ export default async function DashboardPage() {
       <div className="mt-6"><SectionTitle>Performance</SectionTitle></div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title="Revenue Trend" subtitle="Monthly revenue, last 24 months — click a month" />
+          <CardHeader title="Revenue Trend" subtitle="Monthly revenue, last 24 months — click a month" info="Company revenue per month. Click any month to drill into the customers that ordered that month." />
           <div className="p-2"><RevenueTrend data={monthlySeries} details={monthDetails} /></div>
         </Card>
         <Card>
-          <CardHeader title="Year-on-Year" subtitle="Revenue by financial year" />
+          <CardHeader title="Year-on-Year" subtitle="Revenue by financial year" info="Total revenue per financial year (Apr–Mar). The latest bar is the current FY in progress." />
           <div className="p-2"><YoYBar data={yoy} /></div>
           {yoyTrend && <div className="border-t border-ink-100 px-5 py-3 text-xs text-ink-500">Latest FY tracking at <strong className="text-ink-700">{pct((yoy[yoy.length - 1].revenue / yoy[yoy.length - 2].revenue) * 100)}</strong> of last FY (in progress).</div>}
         </Card>
@@ -170,11 +171,11 @@ export default async function DashboardPage() {
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card>
-          <CardHeader title="Customer Mix" subtitle={`${customers.length} customers — click a segment`} />
+          <CardHeader title="Customer Mix" subtitle={`${customers.length} customers — click a segment`} info="Split of accounts by category. Click a segment to list those customers." />
           <div className="p-2"><CategoryPie data={catData} details={catDetails} /></div>
         </Card>
         <Card className="lg:col-span-2">
-          <CardHeader title="Weighted Pipeline" subtitle="Expected value by stage — click a bar" />
+          <CardHeader title="Weighted Pipeline" subtitle="Expected value by stage — click a bar" info="Open-opportunity value weighted by each stage's win probability. Click a bar to see those deals." />
           <div className="p-2"><PipelineBar data={pipelineData} details={pipeDetails} /></div>
         </Card>
       </div>
@@ -184,7 +185,7 @@ export default async function DashboardPage() {
           <div className="mt-6"><SectionTitle>Team</SectionTitle></div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
-              <CardHeader title="Seller Performance" subtitle="Achieved vs target — click a seller" />
+              <CardHeader title="Seller Performance" subtitle="Achieved vs target — click a seller" info="Each seller's monthly achieved vs target. Click a seller to see their accounts." />
               <div className="p-2"><TeamBar data={teamData} details={teamDetails} /></div>
             </Card>
             <div className="grid grid-cols-1 gap-4">

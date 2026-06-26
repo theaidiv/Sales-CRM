@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/lib/notifications";
-import { Bell, AlertTriangle, RefreshCw, Clock, HeartPulse, TrendingDown, CheckCheck } from "lucide-react";
+import { Bell, AlertTriangle, RefreshCw, Clock, HeartPulse, TrendingDown, CheckCheck, Trophy, BarChart3, Users } from "lucide-react";
 
-const ICONS = { risk: AlertTriangle, recover: RefreshCw, stall: Clock, health: HeartPulse, followup: TrendingDown };
+const ICONS = { risk: AlertTriangle, recover: RefreshCw, stall: Clock, health: HeartPulse, followup: TrendingDown, won: Trophy, summary: BarChart3, team: Users };
 const SEV = {
   High: "bg-rose-50 text-rose-500",
   Medium: "bg-amber-50 text-amber-500",

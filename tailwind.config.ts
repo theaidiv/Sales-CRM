@@ -9,30 +9,45 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Mastek-inspired brand — deep purple/violet with a magenta gradient.
+        // Brand — deep navy (#001689) → turquoise → cyan gradient identity.
         brand: {
-          50: "#f8f4fc",
-          100: "#efe3f8",
-          200: "#dec6f0",
-          300: "#c79fe6",
-          400: "#a86fd6",
-          500: "#8c41c4",
-          600: "#7a32b0",
-          700: "#662d91",
-          800: "#532676",
-          900: "#3f1d5a",
-          950: "#29103d",
+          50: "#eef1fb",
+          100: "#d6dcf3",
+          200: "#aab6e6",
+          300: "#7b8dd6",
+          400: "#4d63c4",
+          500: "#2a40ab",
+          600: "#0d2199",
+          700: "#001689",
+          800: "#001070",
+          900: "#000a4d",
+          950: "#00062e",
         },
-        // Magenta/pink accent — the other end of the Mastek gradient.
+        // Secondary — turquoise (#0099A8).
+        secondary: {
+          50: "#e6f7f9",
+          100: "#c0ecf0",
+          200: "#8ddee5",
+          300: "#4fcad6",
+          400: "#1bb0c0",
+          500: "#0099a8",
+          600: "#007e8b",
+          700: "#006570",
+          800: "#00505a",
+          900: "#003b42",
+        },
+        // Accent — cyan (#0FBDFF), light #7DE9FF.
         accent: {
-          50: "#fdf4fb",
-          100: "#fae6f6",
-          200: "#f5cdee",
-          300: "#eea3df",
-          400: "#e36cc9",
-          500: "#d6249f",
-          600: "#b91d8a",
-          700: "#971a72",
+          50: "#e9f9ff",
+          100: "#cbf0ff",
+          200: "#7de9ff",
+          300: "#3dd5ff",
+          400: "#0fbdff",
+          500: "#00a0e6",
+          600: "#0081bd",
+          700: "#00688f",
+          800: "#005573",
+          900: "#00455e",
         },
         ink: {
           50: "#f8fafc",
@@ -56,7 +71,7 @@ const config: Config = {
         card: "0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06)",
         "card-hover": "0 10px 30px -10px rgb(15 23 42 / 0.18), 0 2px 8px -2px rgb(15 23 42 / 0.08)",
         elevated: "0 20px 50px -20px rgb(15 23 42 / 0.25)",
-        glow: "0 0 0 1px rgb(122 50 176 / 0.20), 0 8px 30px -8px rgb(102 45 145 / 0.45)",
+        glow: "0 0 0 1px rgb(15 189 255 / 0.20), 0 8px 30px -8px rgb(0 22 137 / 0.45)",
         "inner-top": "inset 0 1px 0 0 rgb(255 255 255 / 0.6)",
       },
       borderRadius: {

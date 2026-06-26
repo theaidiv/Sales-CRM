@@ -3,7 +3,20 @@ import type { ReactNode } from "react";
 import { Drillable, DrillHint, type DrillDetail } from "@/components/DrillDown";
 import { AnimatedNumber, type NumKind } from "@/components/AnimatedNumber";
 import { typeStyle } from "@/lib/typeColors";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, Info } from "lucide-react";
+
+/** (i) icon with a hover tooltip — explains what a card/metric means. */
+export function InfoTip({ text }: { text: string }) {
+  return (
+    <span className="group/info relative inline-flex items-center">
+      <Info size={13} className="cursor-help text-ink-300 transition hover:text-brand-500" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-xl bg-ink-900 px-3 py-2 text-[11px] font-normal leading-relaxed text-white opacity-0 shadow-elevated transition-opacity duration-150 group-hover/info:opacity-100">
+        {text}
+        <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-ink-900" />
+      </span>
+    </span>
+  );
+}
 
 export function Card({ className, children, interactive }: { className?: string; children: ReactNode; interactive?: boolean }) {
   return (
@@ -19,11 +32,11 @@ export function Card({ className, children, interactive }: { className?: string;
   );
 }
 
-export function CardHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+export function CardHeader({ title, subtitle, action, info }: { title: string; subtitle?: string; action?: ReactNode; info?: string }) {
   return (
     <div className="flex items-start justify-between border-b border-ink-100 px-5 py-4">
       <div>
-        <h3 className="font-display text-sm font-semibold text-ink-800">{title}</h3>
+        <h3 className="flex items-center gap-1.5 font-display text-sm font-semibold text-ink-800">{title}{info && <InfoTip text={info} />}</h3>
         {subtitle && <p className="mt-0.5 text-xs text-ink-500">{subtitle}</p>}
       </div>
       {action}
@@ -50,7 +63,7 @@ export interface Trend {
 }
 
 export function Stat({
-  label, value, sub, tone = "default", icon, trend, detail, animate, valueKind = "int",
+  label, value, sub, tone = "default", icon, trend, detail, animate, valueKind = "int", info,
 }: {
   label: string;
   value?: string;
@@ -61,11 +74,13 @@ export function Stat({
   detail?: DrillDetail;
   animate?: number;
   valueKind?: NumKind;
+  info?: string;
 }) {
   const body = (
     <Card interactive={!!detail} className="relative h-full overflow-hidden p-5">
+      <span className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand-600 via-secondary-500 to-accent-400 opacity-70" />
       <div className="flex items-start justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{label}</p>
+        <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-ink-500">{label}{info && <InfoTip text={info} />}</p>
         {icon && <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", TONE_ICON_BG[tone])}>{icon}</span>}
       </div>
       <p className={cn("mt-2 font-display text-2xl font-bold tracking-tight", TONE_TEXT[tone])}>
@@ -127,8 +142,8 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 export function AiCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center gap-2.5 border-b border-brand-100 bg-gradient-to-r from-brand-50 via-purple-50 to-accent-50 px-5 py-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 text-[11px] font-bold text-white shadow-sm">AI</span>
+      <div className="flex items-center gap-2.5 border-b border-brand-100 bg-gradient-to-r from-brand-50 via-secondary-50 to-accent-50 px-5 py-3">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-700 to-accent-400 text-[11px] font-bold text-white shadow-sm">AI</span>
         <h3 className="font-display text-sm font-semibold text-brand-900">{title}</h3>
         <span className="ml-auto flex items-center gap-1 text-[11px] font-medium text-brand-500">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-400" /> Live

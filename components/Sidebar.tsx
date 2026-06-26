@@ -60,7 +60,7 @@ export function Sidebar({ name, role }: { name: string; role: string }) {
   return (
     <aside className={cn("flex h-screen shrink-0 flex-col border-r border-ink-200/70 bg-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]", collapsed ? "w-[72px]" : "w-64")}>
       <div className={cn("flex items-center gap-3 px-4 py-5", collapsed && "justify-center px-0")}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 font-display text-lg font-black text-white shadow-glow">S</div>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-700 to-accent-400 font-display text-lg font-black text-white shadow-glow">S</div>
         {!collapsed && (
           <div className="min-w-0">
             <p className="truncate font-display text-sm font-bold text-ink-900">Saaya Group</p>
@@ -88,7 +88,7 @@ export function Sidebar({ name, role }: { name: string; role: string }) {
                       active ? "bg-gradient-to-r from-brand-50 to-accent-50 text-brand-700" : "text-ink-500 hover:bg-ink-50 hover:text-ink-800"
                     )}
                   >
-                    {active && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-brand-500 to-accent-500" />}
+                    {active && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-brand-700 to-accent-400" />}
                     <Icon size={18} className={active ? "text-brand-600" : "text-ink-400 group-hover:text-ink-600"} />
                     {!collapsed && item.label}
                   </Link>
@@ -109,7 +109,7 @@ export function Sidebar({ name, role }: { name: string; role: string }) {
 
       <div className="border-t border-ink-100 p-3">
         <div className={cn("mb-1 flex items-center gap-3 rounded-xl px-2 py-1.5", collapsed && "justify-center px-0")}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-xs font-bold text-white">{initials}</div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-700 to-accent-400 text-xs font-bold text-white">{initials}</div>
           {!collapsed && (
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-ink-800">{name}</p>
