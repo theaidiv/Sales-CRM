@@ -2,6 +2,7 @@ import OpenAI from "openai";
 
 const apiKey = process.env.GROQ_API_KEY;
 const model = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+const visionModel = process.env.GROQ_VISION_MODEL || "meta-llama/llama-4-scout-17b-16e-instruct";
 const baseURL = process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1";
 
 export const aiEnabled = Boolean(apiKey);
@@ -44,4 +45,41 @@ export async function groqChat(
     console.error("[groq] chat failed, falling back:", (err as Error).message);
     return null;
   }
+}
+
+/** Vision call: extract structured info from an image (data URL or http URL). */
+export async function groqVision(imageUrl: string, prompt: string): Promise<string | null> {
+  const c = getClient();
+  if (!c) return null;
+  try {
+    const res = await c.chat.completions.create(
+      {
+        model: visionModel,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: imageUrl } },
+            ] as any,
+          },
+        ],
+        temperature: 0.1,
+        max_tokens: 800,
+      },
+      { timeout: 25000, maxRetries: 0 }
+    );
+    return res.choices[0]?.message?.content?.trim() || null;
+  } catch (err) {
+    console.error("[groq] vision failed:", (err as Error).message);
+    return null;
+  }
+}
+
+/** Parse the first JSON object found in a model response. */
+export function extractJson<T = any>(s: string | null): T | null {
+  if (!s) return null;
+  const match = s.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try { return JSON.parse(match[0]) as T; } catch { return null; }
 }

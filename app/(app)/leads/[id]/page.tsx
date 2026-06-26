@@ -2,10 +2,11 @@ import { requireProfile } from "@/lib/auth";
 import { getOpportunityById, getOpportunityComments, getCustomerById, getCustomerTimeline, getProfiles } from "@/lib/data";
 import { Card, CardHeader, Stat, Badge, AiCard, PageHeader } from "@/components/ui";
 import { STAGE_PROBABILITY } from "@/lib/types";
+import { scoreLead } from "@/lib/engines/leadScore";
 import { inr, fmtDate } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, MapPin, Phone, MessageSquare, ArrowRight } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, Phone, MessageSquare, ArrowRight, ArrowUpRight, ArrowDownRight, Gauge } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -24,6 +25,8 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
   const timeline = opp.customer_id ? await getCustomerTimeline(opp.customer_id) : { activities: [], comments: [], orders: [], quotations: [], opportunities: [] };
 
   const weighted = opp.value * (STAGE_PROBABILITY[opp.stage] ?? 0);
+  const lead = scoreLead(opp, customer ?? undefined);
+  const scoreColor = lead.band === "Hot" ? "from-emerald-500 to-teal-500" : lead.band === "Warm" ? "from-amber-500 to-orange-500" : "from-ink-400 to-ink-500";
 
   return (
     <div className="animate-fade-in">
@@ -86,6 +89,32 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
         </div>
 
         <div className="space-y-4">
+          <Card className="overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-brand-100 bg-gradient-to-r from-brand-50 to-accent-50 px-5 py-3">
+              <Gauge size={16} className="text-brand-600" />
+              <h3 className="font-display text-sm font-semibold text-brand-900">AI Lead Score</h3>
+              <span className="ml-auto"><Badge>{lead.band}</Badge></span>
+            </div>
+            <div className="p-5">
+              <div className="flex items-end gap-3">
+                <span className={`bg-gradient-to-br ${scoreColor} bg-clip-text font-display text-4xl font-black text-transparent`}>{lead.score}</span>
+                <span className="mb-1 text-sm text-ink-400">/ 100 win likelihood</span>
+              </div>
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-ink-100">
+                <div className={`h-full rounded-full bg-gradient-to-r ${scoreColor}`} style={{ width: `${lead.score}%` }} />
+              </div>
+              <ul className="mt-4 space-y-1.5">
+                {lead.factors.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-ink-600">
+                    {f.impact === "up" ? <ArrowUpRight size={14} className="text-emerald-500" /> : <ArrowDownRight size={14} className="text-rose-500" />}
+                    {f.label}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-ink-400">Logistic model · stage × health × recency × deal age</p>
+            </div>
+          </Card>
+
           {customer && (
             <Card className="p-5">
               <div className="mb-3 flex items-center justify-between">

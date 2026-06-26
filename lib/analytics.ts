@@ -68,6 +68,17 @@ export function monthlyRevenueSeries(orders: OrderRow[], count = 24): MonthPoint
   }));
 }
 
+/** Raw monthly revenue (chronological) with calendar month index — for ML fitting. */
+export function monthlyRevenueRaw(orders: OrderRow[], count = 24): { year: number; month0: number; revenue: number }[] {
+  const buckets = new Map<string, number>();
+  for (const o of orders) {
+    const d = new Date(o.order_date);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    buckets.set(key, (buckets.get(key) ?? 0) + o.amount);
+  }
+  return lastNMonths(count).map((m) => ({ year: m.year, month0: m.month0, revenue: Math.round(buckets.get(m.key) ?? 0) }));
+}
+
 export interface YoYPoint { fy: string; revenue: number; }
 
 /** Revenue by financial year for the last `years` completed/started FYs. */

@@ -2,6 +2,7 @@ import { requireProfile, isManager } from "@/lib/auth";
 import { getAnalyticsBundle, getProfiles } from "@/lib/data";
 import { explainProjection } from "@/lib/ai/insights";
 import { Card, CardHeader, Stat, Badge, ProgressBar, PageHeader, AiCard, SectionTitle } from "@/components/ui";
+import { AiInsight } from "@/components/AiInsight";
 import { CategoryPie, PipelineBar, TeamBar, RevenueTrend, YoYBar } from "@/components/Charts";
 import { Drillable, type DrillDetail } from "@/components/DrillDown";
 import { inr, pct, lastNMonths, shortMonthLabel } from "@/lib/utils";
@@ -152,7 +153,7 @@ export default async function DashboardPage() {
         <ProgressBar value={achievementPct} tone={achievementPct >= 80 ? "good" : achievementPct >= 50 ? "brand" : "bad"} />
       </Card>
 
-      <div className="mt-4"><AiCard title="AI Projection Insight">{aiExplain}</AiCard></div>
+      <div className="mt-4"><AiInsight title="AI Projection Insight" text={aiExplain} /></div>
 
       <div className="mt-6"><SectionTitle>Performance</SectionTitle></div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

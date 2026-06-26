@@ -4,6 +4,7 @@ import { buildNotifications } from "@/lib/notifications";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { DrillProvider } from "@/components/DrillDown";
+import { AssistantWidget } from "@/components/AssistantWidget";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile();
@@ -20,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <div className="mx-auto max-w-7xl px-6 py-7">{children}</div>
           </main>
         </div>
+        <AssistantWidget />
       </div>
     </DrillProvider>
   );

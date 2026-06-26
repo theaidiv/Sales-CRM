@@ -3,6 +3,7 @@ import { getCustomerById, getCustomerTimeline, getProfiles } from "@/lib/data";
 import { summarizeCustomer } from "@/lib/ai/insights";
 import { recoveryScore } from "@/lib/engines/recovery";
 import { Card, CardHeader, Stat, Badge, AiCard, PageHeader } from "@/components/ui";
+import { AiInsight } from "@/components/AiInsight";
 import { inr, fmtDate } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -54,7 +55,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <AiCard title="AI Customer Summary">{aiSummary}</AiCard>
+          <AiInsight title="AI Customer Summary" text={aiSummary} />
 
           <Card>
             <CardHeader title="Leads & Opportunities" subtitle={`${opportunities.length} linked`} />

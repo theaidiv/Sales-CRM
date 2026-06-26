@@ -3,6 +3,7 @@ import { getAnalyticsBundle, getProfiles } from "@/lib/data";
 import { buildNextMonthPlan } from "@/lib/analytics";
 import { explainProjection } from "@/lib/ai/insights";
 import { PageHeader, Card, CardHeader, Stat, AiCard, ProgressBar, Badge } from "@/components/ui";
+import { AiInsight } from "@/components/AiInsight";
 import { ProjectionBreakdownBar } from "@/components/Charts";
 import { NextMonthExport } from "@/components/NextMonthExport";
 import { inr, pct, currentMonthKey, monthName } from "@/lib/utils";
@@ -62,7 +63,7 @@ export default async function ProjectionsPage({ searchParams }: { searchParams: 
           <Stat label="Confidence" value={pct(plan.projection.confidence)} tone="warn" />
         </div>
 
-        <div className="mb-4"><AiCard title={`Why this ${label} projection`}>{ai}</AiCard></div>
+        <div className="mb-4"><AiInsight title={`Why this ${label} projection`} text={ai} /></div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
@@ -133,7 +134,7 @@ export default async function ProjectionsPage({ searchParams }: { searchParams: 
         </Card>
       </div>
 
-      <div className="mb-4"><AiCard title="Forecast Explanation">{ai}</AiCard></div>
+      <div className="mb-4"><AiInsight title="Forecast Explanation" text={ai} /></div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>

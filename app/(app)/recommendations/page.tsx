@@ -3,6 +3,7 @@ import { getAnalyticsBundle } from "@/lib/data";
 import { dailyActions, targetAdvisor } from "@/lib/engines/actions";
 import { recoveryScore } from "@/lib/engines/recovery";
 import { PageHeader, Card, CardHeader, Badge, AiCard, Stat } from "@/components/ui";
+import { AiInsight } from "@/components/AiInsight";
 import { inr, pct } from "@/lib/utils";
 import { Phone, Users, CheckCircle2, MapPin, AlertTriangle } from "lucide-react";
 
@@ -64,17 +65,10 @@ export default async function RecommendationsPage() {
           </div>
         </Card>
 
-        <AiCard title="Target Achievement Advisor">
-          <p className="mb-2">
-            Gap to target: <strong>{inr(advice.gap)}</strong> · {pct(advice.achievementPct)} achieved.
-          </p>
-          <p className="mb-1 font-medium text-slate-800">Suggested actions:</p>
-          <ul className="list-disc space-y-1 pl-5">
-            {advice.recommendations.map((r, i) => (
-              <li key={i}>{r}</li>
-            ))}
-          </ul>
-        </AiCard>
+        <AiInsight
+          title="Target Achievement Advisor"
+          text={`Gap to target: ${inr(advice.gap)} (${pct(advice.achievementPct)} achieved).\n\nSuggested actions:\n${advice.recommendations.map((r) => `• ${r}`).join("\n")}`}
+        />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
