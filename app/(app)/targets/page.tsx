@@ -34,7 +34,7 @@ export default async function TargetsPage() {
   const execs = profiles.filter((p) => p.role === "Sales Executive");
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader title="Target Management" subtitle={manager ? "Company & team targets" : "Your personal targets"} />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">

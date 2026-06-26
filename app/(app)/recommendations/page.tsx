@@ -31,7 +31,7 @@ export default async function RecommendationsPage() {
     .slice(0, 8);
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader title="AI Daily Action Engine" subtitle="Prioritized actions, target advice & customer recovery" />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">

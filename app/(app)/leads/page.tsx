@@ -13,7 +13,7 @@ export default async function LeadsPage() {
   ]);
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader title="Leads & Pipeline" subtitle="All opportunities — search, filter to yours, or add a new lead" />
       <LeadsBoard opportunities={opportunities} customers={customers} profiles={profiles} currentUserId={profile.id} />
     </div>

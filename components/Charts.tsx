@@ -5,38 +5,64 @@ import {
   PieChart, Pie, Cell, Legend, ComposedChart, Line, Area,
 } from "recharts";
 import { inr } from "@/lib/utils";
+import { useDrill, type DrillDetail } from "@/components/DrillDown";
 
-const COLORS = ["#3563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#ec4899"];
+const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#ec4899"];
+type Details = Record<string, DrillDetail>;
 
-function tip(value: number) {
-  return inr(value);
+function TooltipBox({ active, payload, label, money = true }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl border border-ink-200 bg-white/95 px-3 py-2 shadow-card-hover backdrop-blur">
+      {label != null && <p className="mb-1 text-xs font-semibold text-ink-700">{label}</p>}
+      {payload.map((p: any, i: number) => (
+        <p key={i} className="flex items-center gap-2 text-xs text-ink-600">
+          <span className="h-2 w-2 rounded-full" style={{ background: p.color || p.fill }} />
+          {p.name}: <span className="font-semibold text-ink-800">{money ? inr(p.value) : p.value}</span>
+        </p>
+      ))}
+    </div>
+  );
 }
 
-export function CategoryPie({ data }: { data: { name: string; value: number }[] }) {
+function useDrillClick(details?: Details) {
+  const { open } = useDrill();
+  return (key?: string) => {
+    if (details && key && details[key]) open(details[key]);
+  };
+}
+
+export function CategoryPie({ data, details }: { data: { name: string; value: number }[]; details?: Details }) {
+  const drill = useDrillClick(details);
   return (
     <ResponsiveContainer width="100%" height={220}>
       <PieChart>
-        <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={48} paddingAngle={2}>
-          {data.map((_, i) => (
-            <Cell key={i} fill={COLORS[i % COLORS.length]} />
-          ))}
+        <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={82} innerRadius={50} paddingAngle={3}
+          onClick={(d: any) => drill(d?.name)} className={details ? "cursor-pointer" : ""}>
+          {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="#fff" strokeWidth={2} />)}
         </Pie>
-        <Tooltip formatter={(v: number) => `${v} customers`} />
+        <Tooltip content={<TooltipBox money={false} />} />
         <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
       </PieChart>
     </ResponsiveContainer>
   );
 }
 
-export function PipelineBar({ data }: { data: { stage: string; value: number; count: number }[] }) {
+export function PipelineBar({ data, details }: { data: { stage: string; value: number; count: number }[]; details?: Details }) {
+  const drill = useDrillClick(details);
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <BarChart data={data} margin={{ left: 10, right: 10, top: 10 }}>
+      <BarChart data={data} margin={{ left: 10, right: 10, top: 10 }} onClick={(s: any) => drill(s?.activeLabel)}>
+        <defs>
+          <linearGradient id="pipeFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" /><stop offset="100%" stopColor="#818cf8" />
+          </linearGradient>
+        </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-        <XAxis dataKey="stage" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={60} />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} width={55} />
-        <Tooltip formatter={(v: number, n) => (n === "value" ? tip(v) : v)} />
-        <Bar dataKey="value" fill="#3563eb" radius={[4, 4, 0, 0]} />
+        <XAxis dataKey="stage" tick={{ fontSize: 10, fill: "#64748b" }} interval={0} angle={-20} textAnchor="end" height={60} />
+        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => inr(v)} width={55} />
+        <Tooltip content={<TooltipBox />} cursor={{ fill: "#6366f10d" }} />
+        <Bar dataKey="value" fill="url(#pipeFill)" radius={[6, 6, 0, 0]} className={details ? "cursor-pointer" : ""} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -47,13 +73,11 @@ export function ProjectionBreakdownBar({ data }: { data: { name: string; value: 
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} layout="vertical" margin={{ left: 30, right: 20 }}>
         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#eef2f7" />
-        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} />
-        <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={110} />
-        <Tooltip formatter={(v: number) => tip(v)} />
-        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-          {data.map((_, i) => (
-            <Cell key={i} fill={COLORS[i % COLORS.length]} />
-          ))}
+        <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => inr(v)} />
+        <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} width={120} />
+        <Tooltip content={<TooltipBox />} cursor={{ fill: "#6366f10d" }} />
+        <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+          {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -65,34 +89,36 @@ export function ForecastArea({ data }: { data: { name: string; worst: number; ex
     <ResponsiveContainer width="100%" height={280}>
       <ComposedChart data={data} margin={{ left: 10, right: 10, top: 10 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} width={55} />
-        <Tooltip formatter={(v: number) => tip(v)} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} />
+        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => inr(v)} width={55} />
+        <Tooltip content={<TooltipBox />} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Area type="monotone" dataKey="best" stroke="#10b981" fill="#10b98122" name="Best case" />
-        <Area type="monotone" dataKey="expected" stroke="#3563eb" fill="#3563eb22" name="Expected" />
-        <Area type="monotone" dataKey="worst" stroke="#ef4444" fill="#ef444422" name="Worst case" />
+        <Area type="monotone" dataKey="best" stroke="#10b981" fill="#10b98118" name="Best case" strokeWidth={2} />
+        <Area type="monotone" dataKey="expected" stroke="#6366f1" fill="#6366f122" name="Expected" strokeWidth={2} />
+        <Area type="monotone" dataKey="worst" stroke="#ef4444" fill="#ef444418" name="Worst case" strokeWidth={2} />
         <Line type="monotone" dataKey="target" stroke="#0f172a" strokeDasharray="5 5" dot={false} name="Target" />
       </ComposedChart>
     </ResponsiveContainer>
   );
 }
 
-export function RevenueTrend({ data }: { data: { month: string; revenue: number }[] }) {
+export function RevenueTrend({ data, details }: { data: { month: string; revenue: number }[]; details?: Details }) {
+  const drill = useDrillClick(details);
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <ComposedChart data={data} margin={{ left: 10, right: 10, top: 10 }}>
+      <ComposedChart data={data} margin={{ left: 10, right: 10, top: 10 }} onClick={(s: any) => drill(s?.activeLabel)}>
         <defs>
           <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3563eb" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#3563eb" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-        <XAxis dataKey="month" tick={{ fontSize: 10 }} interval={2} />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} width={55} />
-        <Tooltip formatter={(v: number) => tip(v)} />
-        <Area type="monotone" dataKey="revenue" stroke="#3563eb" strokeWidth={2} fill="url(#revFill)" name="Revenue" />
+        <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#64748b" }} interval={2} />
+        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => inr(v)} width={55} />
+        <Tooltip content={<TooltipBox />} />
+        <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#revFill)" name="Revenue"
+          activeDot={{ r: 5, className: details ? "cursor-pointer" : "" }} />
       </ComposedChart>
     </ResponsiveContainer>
   );
@@ -103,30 +129,29 @@ export function YoYBar({ data }: { data: { fy: string; revenue: number }[] }) {
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data} margin={{ left: 10, right: 10, top: 10 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-        <XAxis dataKey="fy" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} width={55} />
-        <Tooltip formatter={(v: number) => tip(v)} />
-        <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
-          {data.map((_, i) => (
-            <Cell key={i} fill={i === data.length - 1 ? "#3563eb" : "#93b4ff"} />
-          ))}
+        <XAxis dataKey="fy" tick={{ fontSize: 11, fill: "#64748b" }} />
+        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => inr(v)} width={55} />
+        <Tooltip content={<TooltipBox />} cursor={{ fill: "#6366f10d" }} />
+        <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
+          {data.map((_, i) => <Cell key={i} fill={i === data.length - 1 ? "#6366f1" : "#c7d2fe"} />)}
         </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
-export function TeamBar({ data }: { data: { name: string; achieved: number; target: number }[] }) {
+export function TeamBar({ data, details }: { data: { name: string; achieved: number; target: number }[]; details?: Details }) {
+  const drill = useDrillClick(details);
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data} margin={{ left: 10, right: 10, top: 10 }}>
+      <BarChart data={data} margin={{ left: 10, right: 10, top: 10 }} onClick={(s: any) => drill(s?.activeLabel)}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => inr(v)} width={55} />
-        <Tooltip formatter={(v: number) => tip(v)} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} />
+        <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v) => inr(v)} width={55} />
+        <Tooltip content={<TooltipBox />} cursor={{ fill: "#6366f10d" }} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="target" fill="#cbd5e1" radius={[4, 4, 0, 0]} name="Target" />
-        <Bar dataKey="achieved" fill="#3563eb" radius={[4, 4, 0, 0]} name="Achieved" />
+        <Bar dataKey="target" fill="#e2e8f0" radius={[6, 6, 0, 0]} name="Target" />
+        <Bar dataKey="achieved" fill="#6366f1" radius={[6, 6, 0, 0]} name="Achieved" className={details ? "cursor-pointer" : ""} />
       </BarChart>
     </ResponsiveContainer>
   );

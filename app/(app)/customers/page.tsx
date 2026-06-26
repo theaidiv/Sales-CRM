@@ -16,7 +16,7 @@ export default async function CustomersPage() {
   const atRisk = customers.filter((c) => c.health_band === "At Risk" || c.health_band === "Detached Risk").length;
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader title="Customer Intelligence" subtitle="Full customer database — filter to yours, by category, or by region" />
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Total Customers" value={String(customers.length)} />

@@ -17,7 +17,7 @@ export default async function ActivitiesPage() {
   const counts = TYPES.map((t) => ({ type: t, n: activities.filter((a) => a.type === t).length }));
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader title="Sales Activity Tracking" subtitle="All calls, meetings, visits, follow-ups, quotations & orders" />
       <div className="mb-5 grid grid-cols-3 gap-3 md:grid-cols-7">
         {counts.map((c) => <Stat key={c.type} label={c.type} value={String(c.n)} />)}

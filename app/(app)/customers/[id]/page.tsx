@@ -38,7 +38,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
   const recovery = customer.category === "Detached" ? recoveryScore(customer) : null;
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <Link href="/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600">
         <ArrowLeft size={15} /> Back to customers
       </Link>

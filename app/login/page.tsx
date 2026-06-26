@@ -39,19 +39,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-brand-900 to-slate-900 p-4">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ink-950 p-4">
+      {/* ambient glows + grid */}
+      <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-brand-600/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-violet-600/30 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-grid-faint [background-size:40px_40px] opacity-[0.07]" />
+
+      <div className="relative w-full max-w-md animate-fade-up">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500 text-2xl font-black text-white shadow-lg">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-violet-600 font-display text-3xl font-black text-white shadow-glow">
             S
           </div>
-          <h1 className="text-2xl font-bold text-white">AI Sales OS</h1>
-          <p className="mt-1 text-sm text-slate-300">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-white">AI Sales OS</h1>
+          <p className="mt-1.5 text-sm text-ink-400">
             Sales planning, forecasting & customer intelligence
           </p>
         </div>
 
-        <div className="rounded-2xl bg-white p-7 shadow-2xl">
+        <div className="rounded-2xl border border-white/10 bg-white p-7 shadow-elevated">
           <form onSubmit={signIn} className="space-y-4">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-600">Email</label>

@@ -36,7 +36,7 @@ export default async function ForecastsPage() {
   ];
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <PageHeader title="Forecasting Engine" subtitle={`Best / Expected / Worst case scenarios · ${manager ? "Company" : "Personal"}`} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
