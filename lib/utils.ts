@@ -54,6 +54,22 @@ export function monthKeyOf(year: number, monthIndex0: number): string {
   return `${year}-${String(monthIndex0 + 1).padStart(2, "0")}`;
 }
 
+/** First day of next month. */
+export function nextMonthDate(d = new Date()): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+}
+
+export function nextMonthKey(d = new Date()): string {
+  const n = nextMonthDate(d);
+  return monthKeyOf(n.getFullYear(), n.getMonth());
+}
+
+/** Friendly month label from a 'YYYY-MM' key, e.g. 'July 2026'. */
+export function monthName(key: string): string {
+  const [y, m] = key.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+}
+
 // ---- Indian financial year (April–March) ----
 
 /** The starting calendar year of the FY a date falls in. June 2026 -> 2026; Feb 2026 -> 2025. */

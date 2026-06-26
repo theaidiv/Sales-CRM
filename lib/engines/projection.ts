@@ -27,6 +27,8 @@ export interface ProjectionInput {
   monthlyTarget: number;
   /** Trailing ~3-month average monthly revenue per customer id (from real order history). */
   recentRevenueByCustomer?: Record<string, number>;
+  /** Month being projected (defaults to current). Use first-of-next-month for next-month planning. */
+  referenceDate?: Date;
 }
 
 /**
@@ -35,6 +37,7 @@ export interface ProjectionInput {
  */
 export function projectMonth(input: ProjectionInput): ProjectionResult {
   const { customers, opportunities, quotations, monthlyTarget, recentRevenueByCustomer } = input;
+  const refTime = (input.referenceDate ?? new Date()).getTime();
 
   // Regular customers: monthly run-rate from real trailing order history when
   // available, otherwise a smoothed estimate from lifetime revenue.
@@ -64,7 +67,7 @@ export function projectMonth(input: ProjectionInput): ProjectionResult {
   let oppRevenue = 0;
   for (const o of opportunities) {
     if (o.stage === "Won" || o.stage === "Lost") continue;
-    const closeFactor = closeWindowFactor(o.expected_close_date);
+    const closeFactor = closeWindowFactor(o.expected_close_date, refTime);
     oppRevenue += o.value * STAGE_PROBABILITY[o.stage] * closeFactor;
   }
 
@@ -110,12 +113,11 @@ export function projectMonth(input: ProjectionInput): ProjectionResult {
   };
 }
 
-/** Opportunities closing this month count fully; further out are discounted. */
-function closeWindowFactor(expected: string | null): number {
+/** Opportunities closing within the projected month count fully; further out discounted. */
+function closeWindowFactor(expected: string | null, refTime: number): number {
   if (!expected) return 0.4;
-  const m = monthsAgo(expected); // negative if in the future
-  if (m >= 0) return 0.9; // overdue but still open
-  const monthsOut = -m;
+  const monthsOut = (new Date(expected).getTime() - refTime) / (1000 * 60 * 60 * 24 * 30.44);
+  if (monthsOut <= 0) return 0.9; // due by the projected month (or overdue)
   if (monthsOut <= 1) return 0.9;
   if (monthsOut <= 2) return 0.5;
   if (monthsOut <= 3) return 0.3;

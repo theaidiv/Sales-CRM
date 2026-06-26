@@ -18,7 +18,7 @@ import { faker } from "@faker-js/faker";
 import { createClient } from "@supabase/supabase-js";
 import { healthScore } from "../lib/engines/health";
 import { projectMonth } from "../lib/engines/projection";
-import { fiscalStartYear, fiscalYearKeyFromStart, fiscalQuarterKey, currentMonthKey } from "../lib/utils";
+import { fiscalStartYear, fiscalYearKeyFromStart, fiscalQuarterKey, currentMonthKey, nextMonthKey } from "../lib/utils";
 
 faker.seed(20260626);
 
@@ -386,8 +386,16 @@ async function main() {
     targetRows.push({ scope: "user", period_type: "annual", period: fiscalYearKeyFromStart(curFY), owner_id: s.id, team: "Sales", target_amount: s.mTarget * 12, achieved_amount: Math.round(sellerFY[s.id] || 0) });
   }
 
+  // Next-month (planning) targets — so the next-month projection has a goal to plan against.
+  const nKey = nextMonthKey(now);
+  targetRows.push({ scope: "company", period_type: "monthly", period: nKey, owner_id: null, target_amount: 42 * L, achieved_amount: 0 });
+  const nextSellers: [string, number][] = [[headId, 30 * L], [execIds[0], Math.round(4.5 * L)], [execIds[1], 4 * L], [execIds[2], Math.round(3.5 * L)]];
+  for (const [id, tgt] of nextSellers) {
+    targetRows.push({ scope: "user", period_type: "monthly", period: nKey, owner_id: id, team: "Sales", target_amount: tgt, achieved_amount: 0 });
+  }
+
   await insertBatched("targets", targetRows);
-  console.log(`  inserted ${targetRows.length} targets`);
+  console.log(`  inserted ${targetRows.length} targets (incl. next-month plan ${nKey})`);
 
   // Calibration check
   const recentByCustomer: Record<string, number> = {};

@@ -20,6 +20,26 @@ export async function getCustomers(profile: Profile): Promise<Customer[]> {
   return (data as Customer[]) ?? [];
 }
 
+// ---- Unscoped accessors: every user can VIEW all records (filter to "mine" in UI) ----
+
+export async function getAllCustomers(): Promise<Customer[]> {
+  const supabase = createClient();
+  const { data } = await supabase.from("customers").select("*").order("total_revenue", { ascending: false }).limit(5000);
+  return (data as Customer[]) ?? [];
+}
+
+export async function getAllOpportunities(): Promise<Opportunity[]> {
+  const supabase = createClient();
+  const { data } = await supabase.from("opportunities").select("*").order("value", { ascending: false }).limit(5000);
+  return (data as Opportunity[]) ?? [];
+}
+
+export async function getAllActivities(limit = 500): Promise<Activity[]> {
+  const supabase = createClient();
+  const { data } = await supabase.from("activities").select("*").order("activity_date", { ascending: false }).limit(limit);
+  return (data as Activity[]) ?? [];
+}
+
 export async function getOpportunities(profile: Profile): Promise<Opportunity[]> {
   const supabase = createClient();
   let q = supabase.from("opportunities").select("*").order("value", { ascending: false });
