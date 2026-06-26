@@ -36,11 +36,11 @@ export async function getActivities(profile: Profile, limit = 200): Promise<Acti
   return (data as Activity[]) ?? [];
 }
 
-export async function getQuotations(profile: Profile): Promise<Quotation[]> {
+export async function getQuotations(profile: Profile, customers?: Customer[]): Promise<Quotation[]> {
   const supabase = createClient();
   // Quotations are filtered by the customers the user can see.
-  const customers = await getCustomers(profile);
-  const ids = customers.map((c) => c.id);
+  const list = customers ?? (await getCustomers(profile));
+  const ids = list.map((c) => c.id);
   if (ids.length === 0) return [];
   const { data } = await supabase.from("quotations").select("*").in("customer_id", ids).limit(2000);
   return (data as Quotation[]) ?? [];
@@ -56,7 +56,11 @@ export async function getOrders(profile: Profile, customers?: Customer[]): Promi
   const rows: OrderRow[] = [];
   const page = 1000;
   for (let from = 0; ; from += page) {
-    let q = supabase.from("orders").select("*").order("order_date", { ascending: false }).range(from, from + page - 1);
+    let q = supabase
+      .from("orders")
+      .select("id,customer_id,amount,order_date")
+      .order("order_date", { ascending: false })
+      .range(from, from + page - 1);
     if (!manager) q = q.in("customer_id", ids);
     const { data } = await q;
     if (!data || data.length === 0) break;
@@ -92,7 +96,7 @@ export async function getAnalyticsBundle(profile: Profile): Promise<AnalyticsBun
   const customers = await getCustomers(profile);
   const [opportunities, quotations, allTargets, orders] = await Promise.all([
     getOpportunities(profile),
-    getQuotations(profile),
+    getQuotations(profile, customers),
     getTargets(),
     getOrders(profile, customers),
   ]);

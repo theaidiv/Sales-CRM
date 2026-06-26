@@ -6,6 +6,7 @@ import { ProjectionBreakdownBar } from "@/components/Charts";
 import { inr, pct, currentMonthKey } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export default async function ProjectionsPage() {
   const profile = await requireProfile();

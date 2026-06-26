@@ -24,17 +24,21 @@ export interface ChatMessage {
  */
 export async function groqChat(
   messages: ChatMessage[],
-  opts: { temperature?: number; maxTokens?: number } = {}
+  opts: { temperature?: number; maxTokens?: number; timeoutMs?: number } = {}
 ): Promise<string | null> {
   const c = getClient();
   if (!c) return null;
   try {
-    const res = await c.chat.completions.create({
-      model,
-      messages,
-      temperature: opts.temperature ?? 0.4,
-      max_tokens: opts.maxTokens ?? 700,
-    });
+    const res = await c.chat.completions.create(
+      {
+        model,
+        messages,
+        temperature: opts.temperature ?? 0.4,
+        max_tokens: opts.maxTokens ?? 700,
+      },
+      // Fail fast to the deterministic fallback so AI never hangs a page render.
+      { timeout: opts.timeoutMs ?? 8000, maxRetries: 0 }
+    );
     return res.choices[0]?.message?.content?.trim() || null;
   } catch (err) {
     console.error("[groq] chat failed, falling back:", (err as Error).message);

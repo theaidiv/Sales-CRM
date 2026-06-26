@@ -7,6 +7,7 @@ import { inr, pct } from "@/lib/utils";
 import { Phone, Users, CheckCircle2, MapPin, AlertTriangle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const KIND_ICON: Record<string, any> = {
   Call: Phone, Meeting: Users, "Follow-Up": CheckCircle2, Visit: MapPin,

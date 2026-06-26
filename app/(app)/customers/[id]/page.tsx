@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Phone, Mail, MapPin, Building2, ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
   await requireProfile();

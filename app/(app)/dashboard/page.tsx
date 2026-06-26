@@ -9,6 +9,7 @@ import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
